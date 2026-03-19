@@ -29,67 +29,111 @@
     <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
   </nav>
 
-  <main class="dashboard-main">
-
-    <!-- PAGE HEADER -->
-    <div class="page-header">
-      <h1>🎯 Pick Your Team</h1>
-      <p>Select 11 players + 1 Impact Player</p>
-    </div>
+  <main class="predict-main">
 
     <!-- LOADING STATE -->
-    <div id="loading-state" class="match-card" style="text-align:center;padding:40px">
-      <p>⏳ Loading match...</p>
+    <div id="loading-state" style="text-align:center;padding:60px 20px;color:white">
+      <div style="font-size:3rem">⏳</div>
+      <p style="margin-top:12px;color:rgba(255,255,255,0.7)">Loading match...</p>
     </div>
 
-    <!-- MATCH INFO BANNER -->
-    <div id="match-banner" class="match-banner hidden">
-      <div class="match-banner-teams">
-        <span id="banner-team1">Team 1</span>
-        <span class="banner-vs">VS</span>
-        <span id="banner-team2">Team 2</span>
-      </div>
-      <div class="match-banner-info">
-        <span id="banner-date">📅 Today</span>
-        <span id="banner-venue">🏟️ Venue</span>
-        <span id="banner-type">🎯 T20</span>
-      </div>
-    </div>
+    <!-- PREDICT CONTENT -->
+    <div id="predict-content" class="hidden">
 
-    <!-- SELECTION COUNTER STICKY -->
-    <div class="selection-sticky hidden" id="selection-sticky">
-      <div class="selection-sticky-inner">
-        <span>Selected: <strong id="selected-count">0</strong>/12</span>
-        <span class="impact-info">⚡ 12th = Impact Player</span>
-        <button class="btn-view-team hidden" id="btn-view-team" onclick="goToReview()">
-          View My Team →
+      <!-- MATCH HEADER CARD -->
+      <div class="predict-match-header">
+
+        <!-- Row 1: Teams -->
+        <div class="pmh-teams-row">
+          <div class="pmh-team">
+            <span class="pmh-flag" id="pmh-flag1">🏏</span>
+            <span class="pmh-name" id="pmh-name1">Team 1</span>
+          </div>
+          <div class="pmh-vs-block">
+            <span class="pmh-vs">VS</span>
+            <span class="pmh-type" id="pmh-type">T20</span>
+          </div>
+          <div class="pmh-team pmh-team-right">
+            <span class="pmh-name" id="pmh-name2">Team 2</span>
+            <span class="pmh-flag" id="pmh-flag2">🏏</span>
+          </div>
+        </div>
+
+        <!-- Row 2: Match Info -->
+        <div class="pmh-info-row">
+          <div class="pmh-info-item">
+            <span class="pmh-info-label">Match venue :</span>
+            <span class="pmh-info-value" id="pmh-venue">TBA</span>
+          </div>
+          <div class="pmh-info-item">
+            <span class="pmh-info-label">Match Date :</span>
+            <span class="pmh-info-value" id="pmh-date">TBA</span>
+          </div>
+        </div>
+
+        <!-- Row 3: DRS AI Button -->
+        <button class="drs-ai-btn" onclick="openDRSAI()">
+          🤖 DRS AI — Get match insights & help
         </button>
+
       </div>
-      <div class="selected-strip" id="selected-strip"></div>
+
+      <!-- TWO COLUMN PLAYER LISTS -->
+      <div class="predict-two-col">
+
+        <!-- Team 1 Players -->
+        <div class="predict-team-col">
+          <div class="predict-col-header">
+            <span class="predict-col-flag" id="col-flag1">🏏</span>
+            <span class="predict-col-name" id="col-name1">Team 1</span>
+            <span class="predict-col-count" id="col-count1"></span>
+          </div>
+          <div class="predict-col-players" id="col-players1">
+            <div class="predict-loading">⏳ Loading...</div>
+          </div>
+        </div>
+
+        <!-- Team 2 Players -->
+        <div class="predict-team-col">
+          <div class="predict-col-header">
+            <span class="predict-col-flag" id="col-flag2">🏏</span>
+            <span class="predict-col-name" id="col-name2">Team 2</span>
+            <span class="predict-col-count" id="col-count2"></span>
+          </div>
+          <div class="predict-col-players" id="col-players2">
+            <div class="predict-loading">⏳ Loading...</div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
-    <!-- PLAYERS SECTION -->
-    <div id="players-section" class="hidden">
+    <!-- C & VC SELECTION PAGE -->
+    <div id="cv-section" class="hidden">
 
-      <!-- TEAM 1 PLAYERS -->
-      <div class="team-players-section">
-        <div class="team-players-header" id="team1-header">
-          <span class="tph-flag" id="team1-flag">🏏</span>
-          <span class="tph-name" id="team1-name">Team 1</span>
-          <span class="tph-count" id="team1-count">0 selected</span>
-        </div>
-        <div class="players-grid" id="players-grid-1"></div>
+      <div class="cv-header">
+        <button class="btn-secondary" onclick="backFromCV()">← Back</button>
+        <h2>👑 Select C & VC</h2>
       </div>
 
-      <!-- TEAM 2 PLAYERS -->
-      <div class="team-players-section">
-        <div class="team-players-header" id="team2-header">
-          <span class="tph-flag" id="team2-flag">🏏</span>
-          <span class="tph-name" id="team2-name">Team 2</span>
-          <span class="tph-count" id="team2-count">0 selected</span>
+      <div class="cv-instructions">
+        <div class="cv-inst-item">
+          <span class="cv-inst-badge captain">C</span>
+          <span>Captain gets <strong>2x points</strong></span>
         </div>
-        <div class="players-grid" id="players-grid-2"></div>
+        <div class="cv-inst-item">
+          <span class="cv-inst-badge vc">VC</span>
+          <span>Vice Captain gets <strong>1.5x points</strong></span>
+        </div>
       </div>
+
+      <div class="cv-players-list" id="cv-players-list"></div>
+
+      <button class="btn-primary" id="btn-go-review"
+        onclick="goToReview()"
+        style="opacity:0.5;cursor:not-allowed" disabled>
+        Select C & VC first
+      </button>
 
     </div>
 
@@ -101,20 +145,15 @@
         <h2>⭐ Your Perfect 12</h2>
       </div>
 
-      <!-- Match Info -->
       <div class="perfect11-match">
         <span id="review-team1">Team 1</span>
         <span class="vs-text">VS</span>
         <span id="review-team2">Team 2</span>
       </div>
 
-      <!-- Players List -->
       <div class="perfect11-grid" id="review-grid"></div>
-
-      <!-- Impact Player -->
       <div class="impact-player-box" id="impact-player-box"></div>
 
-      <!-- Total Points -->
       <div class="total-points-box">
         <span>Total Points:</span>
         <span class="total-points-value" id="total-points">0</span>
@@ -123,62 +162,102 @@
       <button class="btn-primary" id="btn-save" onclick="savePrediction()">
         💾 Save My Team
       </button>
-
       <p id="save-msg" class="form-msg"></p>
     </div>
 
-    <!-- RULES BUTTON -->
-    <div class="rules-fab" onclick="toggleRules()">📋 Rules</div>
+  </main>
 
-    <!-- RULES MODAL -->
-    <div id="rules-modal" class="rules-modal hidden">
-      <div class="rules-modal-box">
-        <div class="rules-modal-header">
-          <h3>📋 Playing11 Rules</h3>
-          <button onclick="toggleRules()">✕</button>
+  <!-- BOTTOM STICKY BAR -->
+  <div class="predict-bottom-bar" id="predict-bottom-bar" style="display:none">
+    <div class="pbb-left">
+      <span class="pbb-label">Players selected:</span>
+      <span class="pbb-count"><strong id="pbb-selected">0</strong>/12</span>
+      <span class="pbb-impact">⚡ 12th = Impact</span>
+    </div>
+    <button class="pbb-view-btn hidden" id="pbb-view-btn" onclick="goToCVSelect()">
+      Select C & VC →
+    </button>
+  </div>
+
+  <!-- SELECTED PLAYERS STRIP -->
+  <div class="predict-strip-wrapper" id="predict-strip-wrapper" style="display:none">
+    <div class="predict-strip" id="predict-strip"></div>
+  </div>
+
+  <!-- RULES FAB -->
+  <div class="rules-fab" onclick="toggleRules()">📋 Rules</div>
+
+  <!-- DRS AI MODAL -->
+  <div id="drs-modal" class="rules-modal hidden">
+    <div class="rules-modal-box">
+      <div class="rules-modal-header">
+        <h3>🤖 DRS AI Assistant</h3>
+        <button onclick="closeDRSAI()">✕</button>
+      </div>
+      <div class="rules-modal-content">
+        <div class="drs-coming-soon">
+          <span>🤖</span>
+          <h3>DRS AI Coming Soon!</h3>
+          <p>Our AI assistant will help you with:</p>
+          <div class="drs-features">
+            <div class="drs-feature-item">🏟️ Pitch condition analysis</div>
+            <div class="drs-feature-item">📊 Player form & stats</div>
+            <div class="drs-feature-item">🌤️ Weather impact</div>
+            <div class="drs-feature-item">🎯 Dream team suggestions</div>
+            <div class="drs-feature-item">📈 Win probability</div>
+            <div class="drs-feature-item">🏏 Head to head records</div>
+          </div>
+          <div class="drs-badge">⚡ Powered by AI • Coming Soon</div>
         </div>
-        <div class="rules-modal-content">
-          <div class="rules-section">
-            <h4>🏆 Points Rules</h4>
-            <div class="rules-list">
-              <div class="rule-item"><span class="rule-icon">🏏</span><span>1 Run = <strong>1 Point</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">💫</span><span>Half Century = <strong>+10 Extra Points</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">💯</span><span>Century = <strong>+20 Extra Points</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">⚡</span><span>1 Wicket = <strong>10 Points</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">👑</span><span>Captain = <strong>2x Points</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">⭐</span><span>Vice Captain = <strong>1.5x Points</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">⚡</span><span>Impact Player = <strong>Normal Points</strong></span></div>
-            </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div id="rules-modal" class="rules-modal hidden">
+    <div class="rules-modal-box">
+      <div class="rules-modal-header">
+        <h3>📋 Playing11 Rules</h3>
+        <button onclick="toggleRules()">✕</button>
+      </div>
+      <div class="rules-modal-content">
+        <div class="rules-section">
+          <h4>🏆 Points Rules</h4>
+          <div class="rules-list">
+            <div class="rule-item"><span class="rule-icon">🏏</span><span>1 Run = <strong>1 Point</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">💫</span><span>Half Century = <strong>+10 Extra Points</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">💯</span><span>Century = <strong>+20 Extra Points</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">⚡</span><span>1 Wicket = <strong>10 Points</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">👑</span><span>Captain = <strong>2x Points</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">⭐</span><span>Vice Captain = <strong>1.5x Points</strong></span></div>
           </div>
-          <div class="rules-section">
-            <h4>💡 Player Status Lights</h4>
-            <div class="rules-list">
-              <div class="rule-item"><span class="status-dot blue-dot"></span><span><strong>Blue Glow</strong> = Played last match</span></div>
-              <div class="rule-item"><span class="status-dot green-dot"></span><span><strong>Green Glow</strong> = Playing this match</span></div>
-              <div class="rule-item"><span class="status-dot red-dot"></span><span><strong>Red Glow</strong> = Not playing this match</span></div>
-            </div>
+        </div>
+        <div class="rules-section">
+          <h4>💡 Player Status Lights</h4>
+          <div class="rules-list">
+            <div class="rule-item"><span class="status-dot blue-dot"></span><span><strong>Blue</strong> = Played last match</span></div>
+            <div class="rule-item"><span class="status-dot green-dot"></span><span><strong>Green</strong> = Playing this match</span></div>
+            <div class="rule-item"><span class="status-dot red-dot"></span><span><strong>Red</strong> = Not playing</span></div>
           </div>
-          <div class="rules-section">
-            <h4>📝 Playing Rules</h4>
-            <div class="rules-list">
-              <div class="rule-item"><span class="rule-icon">✅</span><span>Select exactly <strong>11 players + 1 Impact Player</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">👑</span><span>Must select <strong>1 Captain & 1 Vice Captain</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">⏳</span><span>Can edit team until match goes <strong>Live</strong></span></div>
-              <div class="rule-item"><span class="rule-icon">🔒</span><span>Team <strong>locked</strong> once match is Live</span></div>
-            </div>
+        </div>
+        <div class="rules-section">
+          <h4>📝 Playing Rules</h4>
+          <div class="rules-list">
+            <div class="rule-item"><span class="rule-icon">✅</span><span>Select <strong>11 players + 1 Impact Player</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">👑</span><span>Must select <strong>Captain & Vice Captain</strong></span></div>
+            <div class="rule-item"><span class="rule-icon">🔒</span><span>Team <strong>locked</strong> once match is Live</span></div>
           </div>
         </div>
       </div>
     </div>
-
-  </main>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
     import { getAuth, onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
     import { getFirestore, collection, getDocs, query, where,
-      doc, setDoc, serverTimestamp }
+      doc, getDoc, setDoc, serverTimestamp }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
 
     const firebaseConfig = {
@@ -201,23 +280,17 @@
     let captainId = null
     let vcId = null
 
-    // ===== AUTH GUARD =====
+    // ===== AUTH =====
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'login.html'; return }
       currentUser = user
-
       try {
-        const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
         const userDoc = await getDoc(doc(db, 'users', user.uid))
         if (userDoc.exists()) {
           document.getElementById('nav-username').textContent =
             '👤 ' + (userDoc.data().username || user.email.split('@')[0])
         }
-      } catch(e) {
-        document.getElementById('nav-username').textContent =
-          '👤 ' + user.email.split('@')[0]
-      }
-
+      } catch(e) {}
       loadLiveMatch()
     })
 
@@ -241,7 +314,6 @@
           <div class="no-match-state">
             <span>🏏</span>
             <p>No active match right now!</p>
-            <span class="no-match-sub">Admin hasn't set a match yet.</span>
             <a href="dashboard.html" class="btn-primary"
               style="margin-top:16px;display:inline-block;text-decoration:none">
               ← Back to Dashboard
@@ -251,251 +323,254 @@
         return
       }
 
-      // Show match banner
-      const banner = document.getElementById('match-banner')
-      banner.classList.remove('hidden')
+      // Show content
+      document.getElementById('predict-content').classList.remove('hidden')
+      document.getElementById('predict-bottom-bar').style.display = 'flex'
+      document.getElementById('predict-strip-wrapper').style.display = 'block'
 
-      document.getElementById('banner-team1').textContent =
-        (liveMatch.team1Flag || '🏏') + ' ' + liveMatch.team1Name
-      document.getElementById('banner-team2').textContent =
-        (liveMatch.team2Flag || '🏏') + ' ' + liveMatch.team2Name
-      document.getElementById('banner-type').textContent =
-        '🎯 ' + (liveMatch.matchType || 'T20')
-      document.getElementById('banner-venue').textContent =
-        '🏟️ ' + (liveMatch.venue || 'TBA')
+      // Fill match header
+      document.getElementById('pmh-flag1').textContent = liveMatch.team1Flag || '🏏'
+      document.getElementById('pmh-name1').textContent = liveMatch.team1Name
+      document.getElementById('pmh-flag2').textContent = liveMatch.team2Flag || '🏏'
+      document.getElementById('pmh-name2').textContent = liveMatch.team2Name
+      document.getElementById('pmh-type').textContent = liveMatch.matchType || 'T20'
+      document.getElementById('pmh-venue').textContent = liveMatch.venue || 'TBA'
 
       const formattedDate = liveMatch.date ?
         new Date(liveMatch.date).toLocaleDateString('en-IN', {
           day: 'numeric', month: 'short', year: 'numeric'
-        }) : 'Today'
-      document.getElementById('banner-date').textContent = '📅 ' + formattedDate
+        }) : 'TBA'
+      document.getElementById('pmh-date').textContent = formattedDate
 
-      // Set team headers
-      document.getElementById('team1-flag').textContent = liveMatch.team1Flag || '🏏'
-      document.getElementById('team1-name').textContent = liveMatch.team1Name
-      document.getElementById('team2-flag').textContent = liveMatch.team2Flag || '🏏'
-      document.getElementById('team2-name').textContent = liveMatch.team2Name
+      // Fill column headers
+      document.getElementById('col-flag1').textContent = liveMatch.team1Flag || '🏏'
+      document.getElementById('col-name1').textContent = liveMatch.team1Name
+      document.getElementById('col-flag2').textContent = liveMatch.team2Flag || '🏏'
+      document.getElementById('col-name2').textContent = liveMatch.team2Name
 
       await loadPlayers()
-
-      document.getElementById('players-section').classList.remove('hidden')
-      document.getElementById('selection-sticky').classList.remove('hidden')
     }
 
     // ===== LOAD PLAYERS =====
     async function loadPlayers() {
-      const grid1 = document.getElementById('players-grid-1')
-      const grid2 = document.getElementById('players-grid-2')
-
-      grid1.innerHTML = '<p class="loading-text">⏳ Loading...</p>'
-      grid2.innerHTML = '<p class="loading-text">⏳ Loading...</p>'
-
       const q1 = query(collection(db, 'players'),
         where('teamId', '==', liveMatch.team1Id))
       const q2 = query(collection(db, 'players'),
         where('teamId', '==', liveMatch.team2Id))
-
       const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)])
 
-      grid1.innerHTML = renderPlayers(snap1)
-      grid2.innerHTML = renderPlayers(snap2)
+      // ✅ Fetch all predictions to calculate selection %
+      const predSnap = await getDocs(collection(db, 'predictions'))
+      const totalUsers = predSnap.size
+      const playerSelectionCount = {}
 
-      document.querySelectorAll('.player-card').forEach(card => {
-        card.addEventListener('click', () => togglePlayer(card))
+      predSnap.forEach(d => {
+        const p = d.data()
+        if (p.players) {
+          p.players.forEach(pl => {
+            playerSelectionCount[pl.id] = (playerSelectionCount[pl.id] || 0) + 1
+          })
+        }
+        if (p.impactPlayer) {
+          playerSelectionCount[p.impactPlayer.id] =
+            (playerSelectionCount[p.impactPlayer.id] || 0) + 1
+        }
+      })
+
+      document.getElementById('col-players1').innerHTML =
+        renderPlayerList(snap1, totalUsers, playerSelectionCount)
+      document.getElementById('col-players2').innerHTML =
+        renderPlayerList(snap2, totalUsers, playerSelectionCount)
+
+      document.querySelectorAll('.predict-player-row').forEach(row => {
+        row.addEventListener('click', () => togglePlayer(row))
       })
     }
 
     // ===== ROLE ICON =====
-    function roleIcon(role) {
-      return role === 'Batsman' ? '🏏' :
-             role === 'Bowler' ? '🤾' :
-             role === 'All-Rounder' ? '🌟' : '🧤'
+    function roleIcon(r) {
+      return r === 'Batsman' ? '🏏' : r === 'Bowler' ? '🤾' :
+             r === 'All-Rounder' ? '🌟' : '🧤'
     }
 
-    // ===== RENDER PLAYERS =====
-    function renderPlayers(snapshot) {
-      if (snapshot.empty) return '<p class="loading-text">No players found!</p>'
+    // ===== RENDER PLAYER LIST =====
+    function renderPlayerList(snapshot, totalUsers, playerSelectionCount) {
+      if (snapshot.empty) return '<p class="predict-loading">No players found!</p>'
+
+      const roleOrder = { 'Wicket-Keeper': 1, 'Batsman': 2, 'All-Rounder': 3, 'Bowler': 4 }
+      const players = []
+      snapshot.forEach(d => players.push({ id: d.id, ...d.data() }))
+      players.sort((a, b) => (roleOrder[a.role] || 5) - (roleOrder[b.role] || 5))
 
       let html = ''
-      snapshot.forEach(d => {
-        const p = d.data()
-
-        // ✅ Debug — check what data is coming
-        console.log('Player:', p.name, '| status:', p.status, '| blueLight:', p.blueLight)
-
-        const icon = roleIcon(p.role)
+      players.forEach(p => {
+        const status = p.status || 'green'
+        const rightColor = status === 'red' ? '#ff5050' :
+                          status === 'off' ? '' : '#43e97b'
+        const showRight = status !== 'off'
+        const showBlue = p.blueLight === 'yes'
         const roleColor = p.role === 'Batsman' ? '#f9f047' :
                           p.role === 'Bowler' ? '#38d4c8' :
                           p.role === 'All-Rounder' ? '#ff9a3c' : '#ff6ec7'
 
-        // ✅ Right light
-        const status = p.status || 'green'
-        const rightColor = status === 'red' ? '#ff5050' : '#43e97b'
-        const showRight = status !== 'off'
+        // ✅ Calculate selection percentage
+        const selCount = playerSelectionCount[p.id] || 0
+        const selPct = totalUsers > 0 ? Math.round((selCount / totalUsers) * 100) : 0
 
-        // ✅ Left blue light
-        const showBlue = p.blueLight === 'yes'
+        // ✅ Background fill based on percentage
+        const fillColor = selPct >= 80
+          ? `rgba(67, 233, 123, 0.35)`   // High selection — bright green
+          : selPct >= 50
+          ? `rgba(67, 233, 123, 0.22)`   // Medium selection
+          : selPct >= 20
+          ? `rgba(67, 233, 123, 0.12)`   // Low selection
+          : `rgba(255, 255, 255, 0.05)`  // Very low / none
 
         html += `
-          <div class="player-card"
-            id="pcard-${d.id}"
-            data-id="${d.id}"
+          <div class="predict-player-row"
+            id="prow-${p.id}"
+            data-id="${p.id}"
             data-name="${p.name}"
             data-role="${p.role}"
             data-points="${p.points || 0}"
             data-status="${status}"
-            data-blue="${p.blueLight || 'no'}">
+            data-blue="${p.blueLight || 'no'}"
+            style="
+              background: linear-gradient(
+                to right,
+                ${fillColor} ${selPct}%,
+                rgba(255,255,255,0.04) ${selPct}%
+              );
+              border-color: ${selPct > 50
+                ? 'rgba(67,233,123,0.3)'
+                : 'rgba(255,255,255,0.07)'};
+            ">
 
             <!-- LEFT: Blue Light -->
-            ${showBlue ? `
-              <div style="
-                position:absolute;
-                top:8px;
-                left:8px;
-                width:10px;
-                height:10px;
-                border-radius:50%;
-                background:#4fc3f7;
-                box-shadow:0 0 8px #4fc3f7, 0 0 16px #4fc3f7;
-                z-index:10;
-                animation:glowPulse 1.5s infinite">
-              </div>` : ''}
-
-            <!-- RIGHT: Green/Red Light -->
-            ${showRight ? `
-              <div style="
-                position:absolute;
-                top:8px;
-                right:8px;
-                width:10px;
-                height:10px;
-                border-radius:50%;
-                background:${rightColor};
-                box-shadow:0 0 8px ${rightColor}, 0 0 16px ${rightColor};
-                z-index:10;
-                animation:glowPulse 1.5s infinite">
-              </div>` : ''}
-
-            <div class="player-card-inner">
+            <div class="prow-photo-wrap">
+              ${showBlue ? `<div class="prow-light prow-light-blue"></div>` : ''}
+              ${showRight ? `<div class="prow-light prow-light-right"
+                style="background:${rightColor};box-shadow:0 0 6px ${rightColor}">
+                </div>` : ''}
               ${p.photoUrl
-                ? `<img src="${p.photoUrl}" alt="${p.name}" class="player-photo-img"/>`
-                : `<span class="player-role-icon">${icon}</span>`
+                ? `<img src="${p.photoUrl}" class="prow-photo" alt="${p.name}"/>`
+                : `<div class="prow-photo prow-photo-placeholder">
+                    ${p.name[0].toUpperCase()}
+                  </div>`
               }
-              <span class="player-name">${p.name}</span>
-              <span class="player-role" style="color:${roleColor}">${p.role}</span>
-              <span class="player-pts">${p.points || 0} pts</span>
             </div>
 
+            <!-- Info -->
+            <div class="prow-info">
+              <span class="prow-name">${p.name}</span>
+              <span class="prow-role" style="color:${roleColor}">
+                ${roleIcon(p.role)} ${p.role}
+              </span>
+              <!-- ✅ Selection % shown below role -->
+              ${selPct > 0 ? `
+                <span class="prow-sel-pct">
+                  👥 ${selPct}% selected
+                </span>` : ''}
+            </div>
+
+            <div class="prow-pts">${p.points || 0} pts</div>
+            <div class="prow-tick hidden">✓</div>
           </div>`
       })
       return html
     }
 
     // ===== TOGGLE PLAYER =====
-    function togglePlayer(card) {
-      const id = card.dataset.id
+    function togglePlayer(row) {
+      const id = row.dataset.id
 
-      if (card.classList.contains('selected')) {
-        // ✅ Deselecting — show card again
-        card.classList.remove('selected', 'impact-selected')
-        card.style.display = 'flex'
-        card.style.opacity = '1'
+      if (row.classList.contains('prow-selected')) {
+        row.classList.remove('prow-selected', 'prow-impact')
+        row.querySelector('.prow-tick').classList.add('hidden')
         selectedPlayers = selectedPlayers.filter(p => p.id !== id)
-
+        if (captainId === id) captainId = null
+        if (vcId === id) vcId = null
       } else {
         if (selectedPlayers.length >= MAX_PLAYERS) {
           showToast('❌ Maximum 12 players allowed!')
           return
         }
-
         const isImpact = selectedPlayers.length === 11
-        card.classList.add('selected')
-
+        row.classList.add('prow-selected')
         if (isImpact) {
-          card.classList.add('impact-selected')
+          row.classList.add('prow-impact')
           showToast('⚡ Impact Player selected!')
         }
-
-        // ✅ Hide card from list after selection
-        setTimeout(() => {
-          card.style.opacity = '0'
-          card.style.transform = 'scale(0.8)'
-          card.style.transition = 'all 0.3s ease'
-          setTimeout(() => {
-            card.style.display = 'none'
-          }, 300)
-        }, 100)
-
+        row.querySelector('.prow-tick').classList.remove('hidden')
         selectedPlayers.push({
           id,
-          name: card.dataset.name,
-          role: card.dataset.role,
-          points: parseInt(card.dataset.points) || 0,
+          name: row.dataset.name,
+          role: row.dataset.role,
+          points: parseInt(row.dataset.points) || 0,
           isImpact
         })
       }
 
-      updateCounter()
-      updateSelectedStrip()
-      updateTeamCounts()
+      updateBottomBar()
+      updateStrip()
+      updateColCounts()
     }
 
-    // ===== DESELECT BUTTON =====
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('player-deselect-btn')) {
-        e.stopPropagation()
-        const id = e.target.dataset.id
-
-        // ✅ Show card back in list
-        const card = document.querySelector(`.player-card[data-id="${id}"]`)
-        if (card) {
-          card.classList.remove('selected', 'impact-selected')
-          card.style.display = 'flex'
-          card.style.opacity = '1'
-          card.style.transform = 'scale(1)'
-          card.querySelector('.player-deselect-btn').classList.add('hidden')
-        }
-
-        selectedPlayers = selectedPlayers.filter(p => p.id !== id)
-        updateCounter()
-        updateSelectedStrip()
-        updateTeamCounts()
-      }
-    })
-
-    // ===== UPDATE COUNTER =====
-    function updateCounter() {
+    // ===== UPDATE BOTTOM BAR =====
+    function updateBottomBar() {
       const count = selectedPlayers.length
-      document.getElementById('selected-count').textContent = count
-      const btn = document.getElementById('btn-view-team')
-      count >= 11 ? btn.classList.remove('hidden') : btn.classList.add('hidden')
+      document.getElementById('pbb-selected').textContent = count
+      const btn = document.getElementById('pbb-view-btn')
+      if (count >= 12) {
+        btn.classList.remove('hidden')
+        btn.textContent = 'Select C & VC →'
+      } else if (count >= 11) {
+        btn.classList.remove('hidden')
+        btn.textContent = `Select 1 more (Impact) →`
+      } else {
+        btn.classList.add('hidden')
+      }
     }
 
-    // ===== UPDATE TEAM COUNTS =====
-    function updateTeamCounts() {
-      const t1 = selectedPlayers.filter(p => {
-        return document.querySelector(`#players-grid-1 .player-card[data-id="${p.id}"]`)
-      })
-      const t2 = selectedPlayers.filter(p => {
-        return document.querySelector(`#players-grid-2 .player-card[data-id="${p.id}"]`)
-      })
-      document.getElementById('team1-count').textContent = t1.length + ' selected'
-      document.getElementById('team2-count').textContent = t2.length + ' selected'
+    // ===== UPDATE COLUMN COUNTS =====
+    function updateColCounts() {
+      const c1 = selectedPlayers.filter(p =>
+        document.querySelector(`#col-players1 .predict-player-row[data-id="${p.id}"]`)
+      ).length
+      const c2 = selectedPlayers.filter(p =>
+        document.querySelector(`#col-players2 .predict-player-row[data-id="${p.id}"]`)
+      ).length
+      document.getElementById('col-count1').textContent = c1 || ''
+      document.getElementById('col-count2').textContent = c2 || ''
     }
 
-    // ===== UPDATE SELECTED STRIP =====
-    function updateSelectedStrip() {
-      const strip = document.getElementById('selected-strip')
+    // ===== UPDATE STRIP =====
+    function updateStrip() {
+      const strip = document.getElementById('predict-strip')
       if (selectedPlayers.length === 0) { strip.innerHTML = ''; return }
-
       strip.innerHTML = selectedPlayers.map(p => `
-        <div class="strip-player ${p.isImpact ? 'strip-impact' : ''}">
-          <span>${roleIcon(p.role)}</span>
-          <span class="strip-name">${p.name.split(' ')[0]}</span>
-          ${p.isImpact ? '<span class="strip-impact-badge">⚡</span>' : ''}
-          <button class="strip-remove-btn player-deselect-btn"
-            data-id="${p.id}">✕</button>
+        <div class="pstrip-player ${p.isImpact ? 'pstrip-impact' : ''}"
+          onclick="removeFromStrip('${p.id}')">
+          <span class="pstrip-icon">${roleIcon(p.role)}</span>
+          <span class="pstrip-name">${p.name.split(' ')[0]}</span>
+          <span class="pstrip-remove">✕</span>
+          ${p.isImpact ? '<span class="pstrip-badge">⚡</span>' : ''}
         </div>`).join('')
+    }
+
+    // ===== REMOVE FROM STRIP =====
+    window.removeFromStrip = function(id) {
+      const row = document.querySelector(`.predict-player-row[data-id="${id}"]`)
+      if (row) {
+        row.classList.remove('prow-selected', 'prow-impact')
+        row.querySelector('.prow-tick').classList.add('hidden')
+      }
+      selectedPlayers = selectedPlayers.filter(p => p.id !== id)
+      if (captainId === id) captainId = null
+      if (vcId === id) vcId = null
+      updateBottomBar()
+      updateStrip()
+      updateColCounts()
     }
 
     // ===== SHOW TOAST =====
@@ -512,11 +587,120 @@
       setTimeout(() => toast.classList.remove('show'), 2500)
     }
 
+    // ===== GO TO C/VC SELECTION =====
+    window.goToCVSelect = function() {
+      if (selectedPlayers.length < 12) {
+        showToast('❌ Select all 12 players first!')
+        return
+      }
+      document.getElementById('predict-content').classList.add('hidden')
+      document.getElementById('predict-bottom-bar').style.display = 'none'
+      document.getElementById('predict-strip-wrapper').style.display = 'none'
+      document.getElementById('cv-section').classList.remove('hidden')
+      renderCVList()
+    }
+
+    // ===== RENDER CV LIST =====
+    function renderCVList() {
+      const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
+      const list = document.getElementById('cv-players-list')
+
+      let html = ''
+      regularPlayers.forEach(p => {
+        const isCaptain = captainId === p.id
+        const isVC = vcId === p.id
+        const roleColor = p.role === 'Batsman' ? '#f9f047' :
+                          p.role === 'Bowler' ? '#38d4c8' :
+                          p.role === 'All-Rounder' ? '#ff9a3c' : '#ff6ec7'
+
+        html += `
+          <div class="cv-player-row
+            ${isCaptain ? 'cv-is-captain' : ''}
+            ${isVC ? 'cv-is-vc' : ''}"
+            id="cvrow-${p.id}">
+            <div class="cv-photo-wrap">
+              ${p.photoUrl
+                ? `<img src="${p.photoUrl}" class="cv-photo" alt="${p.name}"/>`
+                : `<div class="cv-photo cv-photo-placeholder">
+                    ${p.name[0].toUpperCase()}
+                   </div>`
+              }
+            </div>
+            <div class="cv-info">
+              <span class="cv-name">${p.name}</span>
+              <span class="cv-role" style="color:${roleColor}">
+                ${roleIcon(p.role)} ${p.role}
+              </span>
+              <span class="cv-pts">${p.points || 0} pts</span>
+            </div>
+            <div class="cv-buttons">
+              <button class="cv-cbtn ${isCaptain ? 'cv-cbtn-active' : ''}"
+                onclick="setCaptainCV('${p.id}')">
+                ${isCaptain ? '👑 C' : 'C'}
+              </button>
+              <button class="cv-vcbtn ${isVC ? 'cv-vcbtn-active' : ''}"
+                onclick="setVCCV('${p.id}')">
+                ${isVC ? '⭐ VC' : 'VC'}
+              </button>
+            </div>
+          </div>`
+      })
+
+      list.innerHTML = html
+      checkCVDone()
+    }
+
+    // ===== SET CAPTAIN =====
+    window.setCaptainCV = function(id) {
+      if (vcId === id) vcId = null
+      captainId = captainId === id ? null : id
+      renderCVList()
+    }
+
+    // ===== SET VC =====
+    window.setVCCV = function(id) {
+      if (captainId === id) captainId = null
+      vcId = vcId === id ? null : id
+      renderCVList()
+    }
+
+    // ===== CHECK CV DONE =====
+    function checkCVDone() {
+      const btn = document.getElementById('btn-go-review')
+      if (captainId && vcId) {
+        btn.disabled = false
+        btn.style.opacity = '1'
+        btn.style.cursor = 'pointer'
+        btn.textContent = '✅ Review My Team →'
+      } else if (captainId) {
+        btn.disabled = true
+        btn.style.opacity = '0.6'
+        btn.style.cursor = 'not-allowed'
+        btn.textContent = '⭐ Now select Vice Captain'
+      } else if (vcId) {
+        btn.disabled = true
+        btn.style.opacity = '0.6'
+        btn.style.cursor = 'not-allowed'
+        btn.textContent = '👑 Now select Captain'
+      } else {
+        btn.disabled = true
+        btn.style.opacity = '0.5'
+        btn.style.cursor = 'not-allowed'
+        btn.textContent = 'Select C & VC first'
+      }
+    }
+
+    // ===== BACK FROM CV =====
+    window.backFromCV = function() {
+      document.getElementById('cv-section').classList.add('hidden')
+      document.getElementById('predict-content').classList.remove('hidden')
+      document.getElementById('predict-bottom-bar').style.display = 'flex'
+      document.getElementById('predict-strip-wrapper').style.display = 'block'
+    }
+
     // ===== GO TO REVIEW =====
     window.goToReview = function() {
-      document.getElementById('players-section').classList.add('hidden')
-      document.getElementById('selection-sticky').classList.add('hidden')
-      document.getElementById('match-banner').classList.add('hidden')
+      document.getElementById('cv-section').classList.add('hidden')
       document.getElementById('review-section').classList.remove('hidden')
 
       document.getElementById('review-team1').textContent =
@@ -532,13 +716,7 @@
       const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
       const impactPlayer = selectedPlayers.find(p => p.isImpact)
 
-      let html = `
-        <div class="captain-instruction">
-          <span>👑</span>
-          <p>Select your <strong>Captain</strong> (2x points) and
-             <strong>Vice Captain</strong> (1.5x points)</p>
-        </div>`
-
+      let html = ''
       regularPlayers.forEach((p, i) => {
         const isCaptain = captainId === p.id
         const isVC = vcId === p.id
@@ -547,39 +725,27 @@
           <div class="perfect11-player
             ${isCaptain ? 'player-captain' : ''}
             ${isVC ? 'player-vc' : ''}"
-            data-id="${p.id}" data-role="${p.role}">
+            data-role="${p.role}">
             <span class="p11-num">${i + 1}</span>
             <span class="p11-icon">${roleIcon(p.role)}</span>
             <div class="p11-info">
-              <span class="p11-name">${p.name}</span>
+              <span class="p11-name">${p.name}
+                ${isCaptain ? '<span style="background:#f9f047;color:#000;font-size:0.6rem;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:900">C</span>' : ''}
+                ${isVC ? '<span style="background:#38d4c8;color:#000;font-size:0.6rem;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:900">VC</span>' : ''}
+              </span>
               <span class="p11-role">${p.role}</span>
             </div>
-            <div class="captain-vc-btns">
-              <button class="btn-captain ${isCaptain ? 'active' : ''}"
-                onclick="setCaptain('${p.id}')">
-                ${isCaptain ? '👑 C' : 'C'}
-              </button>
-              <button class="btn-vc ${isVC ? 'active' : ''}"
-                onclick="setVC('${p.id}')">
-                ${isVC ? '⭐ VC' : 'VC'}
-              </button>
-            </div>
             <span class="p11-pts">
-              ${isCaptain
-                ? `<span class="multiplier-badge">2x</span>`
-                : isVC
-                ? `<span class="multiplier-badge vc-badge">1.5x</span>`
-                : ''}
+              ${isCaptain ? `<span class="multiplier-badge">2x</span>` :
+                isVC ? `<span class="multiplier-badge vc-badge">1.5x</span>` : ''}
               ${isCaptain ? p.points * 2 :
-                isVC ? p.points * 1.5 :
-                p.points} pts
+                isVC ? p.points * 1.5 : p.points} pts
             </span>
           </div>`
       })
 
       document.getElementById('review-grid').innerHTML = html
 
-      // Impact player
       if (impactPlayer) {
         document.getElementById('impact-player-box').innerHTML = `
           <div class="impact-box-inner">
@@ -594,68 +760,32 @@
       updateTotalPoints()
     }
 
-    // ===== SET CAPTAIN =====
-    window.setCaptain = function(id) {
-      if (vcId === id) vcId = null
-      captainId = captainId === id ? null : id
-      renderReview()
-    }
-
-    // ===== SET VICE CAPTAIN =====
-    window.setVC = function(id) {
-      if (captainId === id) captainId = null
-      vcId = vcId === id ? null : id
-      renderReview()
-    }
-
     // ===== UPDATE TOTAL POINTS =====
     function updateTotalPoints() {
       const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
       const impactPlayer = selectedPlayers.find(p => p.isImpact)
 
       let total = 0
-
       regularPlayers.forEach(p => {
         let pts = parseInt(p.points) || 0
-
-        // ✅ Multiply captain by 2x
-        if (p.id === captainId) {
-          pts = pts * 2
-        }
-        // ✅ Multiply vice captain by 1.5x
-        else if (p.id === vcId) {
-          pts = pts * 1.5
-        }
-
+        if (p.id === captainId) pts = pts * 2
+        else if (p.id === vcId) pts = pts * 1.5
         total += pts
       })
-
-      // ✅ Add impact player points normally
-      if (impactPlayer) {
-        total += parseInt(impactPlayer.points) || 0
-      }
-
+      if (impactPlayer) total += parseInt(impactPlayer.points) || 0
       document.getElementById('total-points').textContent = total
 
-      // Enable/disable save button
       const btn = document.getElementById('btn-save')
-      if (!captainId || !vcId) {
-        btn.disabled = true
-        btn.textContent = '⚠️ Select Captain & Vice Captain first!'
-        btn.style.opacity = '0.7'
-      } else {
-        btn.disabled = false
-        btn.textContent = '💾 Save My Team'
-        btn.style.opacity = '1'
-      }
+      btn.disabled = false
+      btn.textContent = '💾 Save My Team'
+      btn.style.opacity = '1'
     }
 
     // ===== BACK TO SELECTION =====
     window.backToSelection = function() {
       document.getElementById('review-section').classList.add('hidden')
-      document.getElementById('players-section').classList.remove('hidden')
-      document.getElementById('selection-sticky').classList.remove('hidden')
-      document.getElementById('match-banner').classList.remove('hidden')
+      document.getElementById('cv-section').classList.remove('hidden')
+      renderCVList()
     }
 
     // ===== SAVE PREDICTION =====
@@ -678,13 +808,8 @@
           if (p.id === captainId) { pts = pts * 2; multiplier = 2 }
           else if (p.id === vcId) { pts = pts * 1.5; multiplier = 1.5 }
           finalTotal += pts
-          return {
-            ...p,
-            finalPoints: pts,
-            multiplier,
-            isCaptain: p.id === captainId,
-            isVC: p.id === vcId
-          }
+          return { ...p, finalPoints: pts, multiplier,
+            isCaptain: p.id === captainId, isVC: p.id === vcId }
         })
 
         if (impactPlayer) finalTotal += parseInt(impactPlayer.points) || 0
@@ -701,32 +826,35 @@
           team2Id: liveMatch.team2Id,
           team2Flag: liveMatch.team2Flag || '🏏',
           players: playersWithRoles,
-          captainId: captainId,
-          vcId: vcId,
+          captainId, vcId,
           impactPlayer: impactPlayer || null,
           totalPoints: finalTotal,
           isCorrect: null,
           createdAt: serverTimestamp()
         })
 
-        msg.textContent = '✅ Team saved successfully!'
+        msg.textContent = '✅ Team saved!'
         msg.className = 'form-msg success'
         btn.textContent = '✅ Saved!'
-
-        setTimeout(() => {
-          window.location.href = 'dashboard.html'
-        }, 1500)
+        setTimeout(() => { window.location.href = 'dashboard.html' }, 1500)
 
       } catch (error) {
         msg.textContent = '❌ ' + error.message
         msg.className = 'form-msg error'
         btn.textContent = '💾 Save My Team'
         btn.disabled = false
-        console.error(error)
       }
     }
 
-    // ===== RULES TOGGLE =====
+    // ===== DRS AI =====
+    window.openDRSAI = function() {
+      document.getElementById('drs-modal').classList.remove('hidden')
+    }
+    window.closeDRSAI = function() {
+      document.getElementById('drs-modal').classList.add('hidden')
+    }
+
+    // ===== RULES =====
     window.toggleRules = function() {
       document.getElementById('rules-modal').classList.toggle('hidden')
     }
