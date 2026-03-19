@@ -181,8 +181,6 @@
           predsByUser[p.userId] = {
             predId: d.id,
             totalPts: correctTotal,
-            team1: p.team1,
-            team2: p.team2,
             players: p.players,
             captainId: p.captainId,
             vcId: p.vcId,
@@ -348,7 +346,6 @@
                   ${isYou ? '<span class="lb-you-tag">👈 You</span>' : ''}
                 </span>
                 <span class="lb-player-email">
-                  ${u.team1} vs ${u.team2}
                 </span>
               </div>
             </div>
@@ -402,7 +399,6 @@
             background:rgba(255,255,255,0.06);
             border-radius:10px;margin-bottom:16px;
             font-weight:700;color:white">
-            ${pred.team1} vs ${pred.team2}
           </div>`
 
         // ✅ Show players with captain/vc multipliers
