@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="login-page">
+
+  <!-- ADMIN BUTTON TOP RIGHT -->
+  <div class="admin-access">
+    <a href="admin.html" class="btn-admin">⚙️ Admin</a>
+  </div>
+
+  <!-- BACKGROUND DECORATION -->
+  <div class="bg-circle bg-circle-1"></div>
+  <div class="bg-circle bg-circle-2"></div>
+
+  <!-- LOGIN CARD -->
+  <div class="login-wrapper">
+
+    <!-- LOGO -->
+    <div class="login-logo">
+      <span class="logo-icon">🏏</span>
+      <h1 class="logo-text">Predict<span>11</span></h1>
+      <p class="logo-tagline">Your Fantasy Cricket Arena</p>
+    </div>
+
+    <!-- FORM -->
+    <div class="login-card">
+      <h2>Welcome Back!</h2>
+      <p class="card-subtitle">Login to make your predictions</p>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <div class="input-wrapper">
+          <span class="input-icon">📧</span>
+          <input type="email" id="email" placeholder="Enter your email" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" placeholder="Enter your password" />
+          <span class="toggle-password" id="toggle-btn">👁️</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="login-btn">Login</button>
+
+      <p id="msg" class="form-msg"></p>
+
+      <div class="form-links">
+        <a href="signup.html">Create Account</a>
+        <a href="forgot-password.html">Forgot Password?</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+      // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+    authDomain: "predict11-fc129.firebaseapp.com",
+    projectId: "predict11-fc129",
+    storageBucket: "predict11-fc129.firebasestorage.app",
+    messagingSenderId: "634146309603",
+    appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+  };
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    console.log('✅ Firebase loaded on login page!')
+
+    // Toggle password visibility
+    document.getElementById('toggle-btn').addEventListener('click', () => {
+      const input = document.getElementById('password')
+      input.type = input.type === 'password' ? 'text' : 'password'
+    })
+
+    // Login button click
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value.trim()
+      const msg = document.getElementById('msg')
+      const btn = document.getElementById('login-btn')
+
+      if (!email || !password) {
+        msg.textContent = '❌ Please fill in all fields!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      btn.textContent = '⏳ Logging in...'
+      btn.disabled = true
+      msg.textContent = ''
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        const user = userCredential.user
+
+        msg.textContent = '✅ Login successful! Redirecting...'
+        msg.className = 'form-msg success'
+
+        // Check if admin
+        try {
+          const adminDoc = await getDoc(doc(db, 'admins', user.uid))
+          msg.textContent = '✅ Login successful! Redirecting...'
+          msg.className = 'form-msg success'
+
+          setTimeout(() => {
+            if (adminDoc.exists()) {
+              window.location.href = 'admin.html'
+            } else {
+              window.location.href = 'dashboard.html'
+            }
+          }, 1000)
+
+        } catch (e) {
+          // If admin check fails, just go to dashboard
+          msg.textContent = '✅ Login successful! Redirecting...'
+          msg.className = 'form-msg success'
+          setTimeout(() => {
+            window.location.href = 'dashboard.html'
+          }, 1000)
+        }
+
+      } catch (error) {
+        btn.textContent = 'Login'
+        btn.disabled = false
+
+        switch (error.code) {
+          case 'auth/user-not-found':
+            msg.textContent = '❌ No account found with this email!'
+            break
+          case 'auth/wrong-password':
+            msg.textContent = '❌ Incorrect password!'
+            break
+          case 'auth/invalid-email':
+            msg.textContent = '❌ Invalid email address!'
+            break
+          case 'auth/invalid-credential':
+            msg.textContent = '❌ Invalid email or password!'
+            break
+          case 'auth/too-many-requests':
+            msg.textContent = '❌ Too many attempts. Try again later!'
+            break
+          default:
+            msg.textContent = '❌ ' + error.message
+        }
+        msg.className = 'form-msg error'
+        console.error('Login error:', error)
+      }
+    })
+  </script>
+
+</body>
+</html>

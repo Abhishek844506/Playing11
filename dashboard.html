@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo">🏏 Playing<span>11</span></div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html" class="active">🏠 Home</a></li>
+      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="nav-username">👤 Player</span>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="dashboard.html" class="active">🏠<span>Home</span></a>
+    <a href="leaderboard.html">🏆<span>Board</span></a>
+    <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
+  </nav>
+
+  <main class="dashboard-main">
+
+    <!-- WELCOME BANNER -->
+    <section class="welcome-banner">
+      <div class="welcome-text">
+        <h1>Welcome back, <span id="user-fullname">Player</span>! 👋</h1>
+        <p>Ready to make your predictions for today's match?</p>
+      </div>
+      <div class="welcome-badge">
+        <span class="badge-points" id="user-points">0</span>
+        <span class="badge-label">Total Points</span>
+      </div>
+    </section>
+
+    <!-- STATS CARDS -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">🎯</span>
+        <div class="stat-info">
+          <h3 id="total-predictions">0</h3>
+          <p>Predictions Made</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">✅</span>
+        <div class="stat-info">
+          <h3 id="correct-predictions">0</h3>
+          <p>Correct Picks</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🏆</span>
+        <div class="stat-info">
+          <h3 id="user-rank">#--</h3>
+          <p>Your Rank</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🔥</span>
+        <div class="stat-info">
+          <h3 id="win-rate">0%</h3>
+          <p>Win Rate</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE MATCH -->
+    <section class="section-title">
+      <h2>🔴 Live Match</h2>
+    </section>
+    <section class="match-card-wrapper" id="live-match-container">
+      <div class="match-card">
+        <div class="lb-loading">⏳ Loading match...</div>
+      </div>
+    </section>
+
+    <!-- UPCOMING MATCHES -->
+    <section class="section-title">
+      <h2>⏳ Upcoming Matches</h2>
+    </section>
+    <section id="upcoming-matches-container">
+      <div class="lb-loading">⏳ Loading...</div>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, doc, getDoc, collection, query,
+      where, onSnapshot, getDocs }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+      authDomain: "predict11-fc129.firebaseapp.com",
+      projectId: "predict11-fc129",
+      storageBucket: "predict11-fc129.firebasestorage.app",
+      messagingSenderId: "634146309603",
+      appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    // ===== AUTH GUARD =====
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return }
+      await loadUserProfile(user.uid)
+      loadPredictions(user.uid)
+      loadAllMatches(user.uid)
+    })
+
+    // ===== LOAD USER PROFILE =====
+    async function loadUserProfile(uid) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', uid))
+        if (userDoc.exists()) {
+          const data = userDoc.data()
+          document.getElementById('user-fullname').textContent =
+            data.username || 'Player'
+          document.getElementById('nav-username').textContent =
+            '👤 ' + (data.username || 'Player')
+          document.getElementById('user-points').textContent =
+            data.totalPoints || 0
+        }
+      } catch (error) {
+        console.error('Profile error:', error)
+      }
+    }
+
+    // ===== LOAD ALL MATCHES =====
+    async function loadAllMatches(uid) {
+      try {
+        const snap = await getDocs(collection(db, 'matches'))
+        const matches = []
+        snap.forEach(d => matches.push({ id: d.id, ...d.data() }))
+
+        const liveMatches = matches.filter(m => m.status === 'live')
+        const upcomingMatches = matches.filter(m => m.status === 'upcoming')
+
+        // Check user predictions
+        const predSnap = await getDocs(
+          query(collection(db, 'predictions'), where('userId', '==', uid))
+        )
+        const userPredictions = {}
+        predSnap.forEach(d => {
+          const p = d.data()
+          userPredictions[p.matchId] = d.id
+        })
+
+        renderLiveMatch(liveMatches[0] || null, userPredictions)
+        renderUpcomingMatches(upcomingMatches, userPredictions)
+
+      } catch(e) {
+        console.error('Matches error:', e)
+      }
+    }
+
+    // ===== RENDER LIVE MATCH =====
+    function renderLiveMatch(match, userPredictions) {
+      const container = document.getElementById('live-match-container')
+
+      if (!match) {
+        container.innerHTML = `
+          <div class="match-card">
+            <div class="no-match-state">
+              <span>🏏</span>
+              <p>No live match right now</p>
+              <span class="no-match-sub">Check upcoming matches below!</span>
+            </div>
+          </div>`
+        return
+      }
+
+      const hasPredicted = userPredictions[match.id]
+      const formattedDate = match.date ?
+        new Date(match.date).toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        }) : 'Today'
+
+      container.innerHTML = `
+        <div class="match-card live-match-card">
+          <div class="match-status live">🔴 LIVE</div>
+          <div class="match-teams">
+            <div class="team">
+              <span class="team-flag">${match.team1Flag || '🏏'}</span>
+              <span class="team-name">${match.team1Name}</span>
+            </div>
+            <div class="match-vs">VS</div>
+            <div class="team">
+              <span class="team-flag">${match.team2Flag || '🏏'}</span>
+              <span class="team-name">${match.team2Name}</span>
+            </div>
+          </div>
+          <div class="match-info">
+            <span>📅 ${formattedDate} • ${match.matchType || 'T20'}</span>
+            <span>🏟️ ${match.venue || 'TBA'}</span>
+          </div>
+          ${hasPredicted
+            ? `<div class="team-action-row">
+                <div class="prediction-done-badge">✅ Team Submitted!</div>
+                <a href="my-team.html" class="btn-view-my-team">👁️ Your Team</a>
+               </div>`
+            : `<a href="predict.html" class="btn-primary">🎯 Make Prediction →</a>`
+          }
+        </div>`
+    }
+
+    // ===== RENDER UPCOMING MATCHES =====
+    function renderUpcomingMatches(matches, userPredictions) {
+      const container = document.getElementById('upcoming-matches-container')
+
+      if (matches.length === 0) {
+        container.innerHTML = `
+          <div class="no-upcoming-state">
+            <span>📅</span>
+            <p>No upcoming matches scheduled</p>
+          </div>`
+        return
+      }
+
+      let html = '<div class="upcoming-matches-grid">'
+      matches.forEach(match => {
+        const hasPredicted = userPredictions[match.id]
+        const formattedDate = match.date ?
+          new Date(match.date).toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric'
+          }) : 'TBA'
+
+        html += `
+          <div class="upcoming-match-card">
+            <div class="match-status upcoming">⏳ Upcoming</div>
+            <div class="upcoming-teams">
+              <div class="upcoming-team">
+                <span class="upcoming-flag">${match.team1Flag || '🏏'}</span>
+                <span class="upcoming-team-name">${match.team1Name}</span>
+              </div>
+              <div class="upcoming-vs">VS</div>
+              <div class="upcoming-team">
+                <span class="upcoming-flag">${match.team2Flag || '🏏'}</span>
+                <span class="upcoming-team-name">${match.team2Name}</span>
+              </div>
+            </div>
+            <div class="upcoming-info">
+              <span>📅 ${formattedDate}</span>
+              <span>🏟️ ${match.venue || 'TBA'}</span>
+              <span>🎯 ${match.matchType || 'T20'}</span>
+            </div>
+            ${hasPredicted
+              ? `<div class="team-action-row" style="margin-top:12px">
+                  <div class="prediction-done-badge">✅ Team Submitted!</div>
+                  <a href="my-team.html" class="btn-view-my-team">👁️ Your Team</a>
+                 </div>`
+              : `<a href="predict.html" class="btn-upcoming-predict">🎯 Predict Now</a>`
+            }
+          </div>`
+      })
+      html += '</div>'
+      container.innerHTML = html
+    }
+
+    // ===== LOAD PREDICTIONS (stats only) =====
+    function loadPredictions(uid) {
+      try {
+        const q = query(
+          collection(db, 'predictions'),
+          where('userId', '==', uid)
+        )
+
+        onSnapshot(q, (snapshot) => {
+          const total = snapshot.size
+          let correct = 0
+
+          document.getElementById('total-predictions').textContent = total
+
+          snapshot.forEach((docSnap) => {
+            const p = docSnap.data()
+            if (p.isCorrect === true) correct++
+          })
+
+          document.getElementById('correct-predictions').textContent = correct
+          const winRate = total > 0 ? Math.round((correct / total) * 100) : 0
+          document.getElementById('win-rate').textContent = winRate + '%'
+        })
+
+      } catch (error) {
+        console.error('Load predictions error:', error)
+      }
+    }
+
+    // ===== LOGOUT =====
+    window.handleLogout = async function() {
+      await signOut(auth)
+      window.location.href = 'login.html'
+    }
+  </script>
+
+</body>
+</html>

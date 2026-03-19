@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | Admin</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="login-page">
+
+  <!-- ADMIN LOGIN SCREEN -->
+  <div id="admin-login-screen">
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+    <div class="login-wrapper">
+      <div class="login-logo">
+        <span class="logo-icon">⚙️</span>
+        <h1 class="logo-text">Admin<span>Panel</span></h1>
+        <p class="logo-tagline">Playing11 Administration</p>
+      </div>
+      <div class="login-card">
+        <h2>Admin Login</h2>
+        <p class="card-subtitle">Enter your admin credentials</p>
+        <div class="form-group">
+          <label>Email</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📧</span>
+            <input type="email" id="admin-email" placeholder="Admin email" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="admin-password" placeholder="Admin password" />
+            <span class="toggle-password" id="admin-toggle">👁️</span>
+          </div>
+        </div>
+        <button class="btn-primary" id="admin-login-btn">Login as Admin</button>
+        <p id="admin-login-msg" class="form-msg"></p>
+        <div class="form-links center-link">
+          <a href="login.html">← Back to User Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD — completely hidden by default -->
+  <div id="admin-dashboard-screen" style="display:none">
+
+    <nav class="navbar">
+      <div class="nav-logo">🏏 Playing<span>11</span></div>
+      <div class="nav-right">
+        <span class="admin-badge">⚙️ Admin Panel</span>
+        <button class="btn-logout" id="admin-logout-btn">Logout</button>
+      </div>
+    </nav>
+
+    <main class="dashboard-main">
+
+      <div class="page-header">
+        <h1>⚙️ Admin Panel</h1>
+        <p>Manage teams, players and update scores</p>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="teams">🏏 Teams</button>
+        <button class="admin-tab" data-tab="players">👥 Players</button>
+        <button class="admin-tab" data-tab="matches">🗓️ Matches</button>
+        <button class="admin-tab" data-tab="scores">📊 Scores</button>
+        <button class="admin-tab" data-tab="predictions">📋 Predictions</button>
+      </div>
+
+      <!-- TAB: TEAMS -->
+      <div class="admin-tab-content" id="tab-teams">
+        <div class="admin-card">
+          <h2>➕ Add New Team</h2>
+          <div class="form-group">
+            <label>Team Name</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏏</span>
+              <input type="text" id="team-name" placeholder="e.g. CSK" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Short Name</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔤</span>
+              <input type="text" id="team-short" placeholder="e.g. CSK" maxlength="4"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Team Emoji / Sticker</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🚩</span>
+              <input type="text" id="team-flag" placeholder="e.g. 🦁⚡" />
+            </div>
+          </div>
+          <button class="btn-primary" id="btn-add-team">Add Team</button>
+          <p id="team-msg" class="form-msg"></p>
+        </div>
+        <div class="admin-card">
+          <h2>📋 All Teams</h2>
+          <div id="teams-list-admin"><p class="lb-loading">⏳ Loading...</p></div>
+        </div>
+      </div>
+
+      <!-- TAB: PLAYERS -->
+      <div class="admin-tab-content hidden" id="tab-players">
+        <div class="admin-card">
+          <h2>➕ Add New Player</h2>
+          <div class="form-group">
+            <label>Select Team</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏏</span>
+              <select id="player-team" class="admin-select">
+                <option value="">-- Select Team --</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Player Name</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input type="text" id="player-name" placeholder="e.g. Rohit Sharma" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🎯</span>
+              <select id="player-role" class="admin-select">
+                <option value="Batsman">🏏 Batsman</option>
+                <option value="Bowler">🤾 Bowler</option>
+                <option value="All-Rounder">🌟 All-Rounder</option>
+                <option value="Wicket-Keeper">🧤 Wicket-Keeper</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Initial Points</label>
+            <div class="input-wrapper">
+              <span class="input-icon">⭐</span>
+              <input type="number" id="player-points" placeholder="0" value="0" min="0"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>📸 Player Photo URL</label>
+            <div class="input-wrapper">
+              <span class="input-icon">📸</span>
+              <input type="text" id="player-photo" placeholder="Paste image URL here" />
+            </div>
+          </div>
+
+          <!-- LIGHT SETTINGS BOX -->
+          <div class="lights-settings-box">
+            <div class="lights-settings-title">💡 Player Light Settings</div>
+            <div class="light-setting-row">
+              <div class="light-setting-info">
+                <span class="light-setting-label">🔵 Left Light</span>
+                <span class="light-setting-sub">Did player play last match?</span>
+              </div>
+              <select id="player-blue-light" class="admin-select-sm">
+                <option value="no">⚫ Off</option>
+                <option value="yes">🔵 On</option>
+              </select>
+            </div>
+            <div class="light-setting-row">
+              <div class="light-setting-info">
+                <span class="light-setting-label">🟢🔴 Right Light</span>
+                <span class="light-setting-sub">Playing status this match</span>
+              </div>
+              <select id="player-status" class="admin-select-sm">
+                <option value="green">🟢 Playing</option>
+                <option value="red">🔴 Not Playing</option>
+                <option value="off">⚫ Off</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="btn-add-player">Add Player</button>
+          <p id="player-msg" class="form-msg"></p>
+        </div>
+
+        <div class="admin-card">
+          <h2>📋 All Players</h2>
+          <div class="form-group">
+            <label>Filter by Team</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔍</span>
+              <select id="filter-team" class="admin-select">
+                <option value="">-- All Teams --</option>
+              </select>
+            </div>
+          </div>
+          <div id="players-list-admin"><p class="lb-loading">⏳ Loading...</p></div>
+        </div>
+      </div>
+
+      <!-- TAB: MATCHES -->
+      <div class="admin-tab-content hidden" id="tab-matches">
+        <div class="admin-card">
+          <h2>➕ Create Match</h2>
+          <p class="card-subtitle">This match will appear on all users dashboards</p>
+          <div class="form-group">
+            <label>Team 1</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏏</span>
+              <select id="match-team1" class="admin-select">
+                <option value="">-- Select Team 1 --</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Team 2</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏏</span>
+              <select id="match-team2" class="admin-select">
+                <option value="">-- Select Team 2 --</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Match Type</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🎯</span>
+              <select id="match-type" class="admin-select">
+                <option value="T20">T20</option>
+                <option value="ODI">ODI</option>
+                <option value="Test">Test</option>
+                <option value="T10">T10</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Venue / Stadium</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏟️</span>
+              <input type="text" id="match-venue" placeholder="e.g. Wankhede Stadium, Mumbai" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Match Date</label>
+            <div class="input-wrapper">
+              <span class="input-icon">📅</span>
+              <input type="date" id="match-date" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Match Status</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔴</span>
+              <select id="match-status" class="admin-select">
+                <option value="upcoming">⏳ Upcoming</option>
+                <option value="live">🔴 Live</option>
+                <option value="completed">✅ Completed</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary" id="btn-add-match">🗓️ Create Match</button>
+          <p id="match-msg" class="form-msg"></p>
+        </div>
+        <div class="admin-card">
+          <h2>📋 All Matches</h2>
+          <div id="matches-list-admin"><p class="lb-loading">⏳ Loading matches...</p></div>
+        </div>
+      </div>
+
+      <!-- TAB: SCORES -->
+      <div class="admin-tab-content hidden" id="tab-scores">
+        <div class="admin-card">
+          <h2>📊 Update Player Scores</h2>
+          <p class="card-subtitle">Update points after each match</p>
+
+          <div class="form-group">
+            <label>Select Team</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏏</span>
+              <select id="score-team" class="admin-select">
+                <option value="">-- Select Team --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ✅ RESET POINTS BUTTON -->
+          <div id="reset-points-wrapper" style="display:none;margin-bottom:16px">
+            <button class="btn-reset-points" id="btn-reset-points">
+              🔄 Reset All Players Points to 1
+            </button>
+            <p id="reset-msg" class="form-msg"></p>
+          </div>
+
+          <div id="scoring-players-list"></div>
+          <button class="btn-primary" id="btn-save-scores" style="display:none">
+            💾 Save All Scores
+          </button>
+          <p id="scores-msg" class="form-msg"></p>
+        </div>
+      </div>
+
+      <!-- TAB: PREDICTIONS -->
+      <div class="admin-tab-content hidden" id="tab-predictions">
+        <div class="admin-card">
+          <h2>📋 All User Predictions</h2>
+          <p class="card-subtitle">Mark predictions as correct or wrong</p>
+          <div id="all-predictions-list"><p class="lb-loading">⏳ Loading...</p></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, collection, addDoc, getDocs, getDoc,
+      doc, updateDoc, deleteDoc, serverTimestamp, writeBatch }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+      authDomain: "predict11-fc129.firebaseapp.com",
+      projectId: "predict11-fc129",
+      storageBucket: "predict11-fc129.firebasestorage.app",
+      messagingSenderId: "634146309603",
+      appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    let allTeams = []
+    let allPlayers = []
+    let isAdminVerified = false
+
+    // ===== TOGGLE PASSWORD =====
+    document.getElementById('admin-toggle').addEventListener('click', () => {
+      const input = document.getElementById('admin-password')
+      input.type = input.type === 'password' ? 'text' : 'password'
+    })
+
+    // ===== ADMIN LOGIN =====
+    document.getElementById('admin-login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('admin-email').value.trim()
+      const password = document.getElementById('admin-password').value.trim()
+      const msg = document.getElementById('admin-login-msg')
+      const btn = document.getElementById('admin-login-btn')
+
+      if (!email || !password) {
+        msg.textContent = '❌ Please fill in all fields!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      btn.textContent = '⏳ Logging in...'
+      btn.disabled = true
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        const user = userCredential.user
+        const adminDoc = await getDoc(doc(db, 'admins', user.uid))
+
+        if (!adminDoc.exists()) {
+          msg.textContent = '❌ You are not authorized as admin!'
+          msg.className = 'form-msg error'
+          btn.textContent = 'Login as Admin'
+          btn.disabled = false
+          await signOut(auth)
+          return
+        }
+
+        isAdminVerified = true
+        msg.textContent = '✅ Welcome Admin!'
+        msg.className = 'form-msg success'
+        showAdminDashboard()
+
+      } catch (error) {
+        btn.textContent = 'Login as Admin'
+        btn.disabled = false
+        switch (error.code) {
+          case 'auth/user-not-found':
+            msg.textContent = '❌ No account found!'; break
+          case 'auth/wrong-password':
+            msg.textContent = '❌ Wrong password!'; break
+          case 'auth/invalid-credential':
+            msg.textContent = '❌ Invalid email or password!'; break
+          default:
+            msg.textContent = '❌ ' + error.message
+        }
+        msg.className = 'form-msg error'
+      }
+    })
+
+    // ===== SHOW ADMIN DASHBOARD =====
+    function showAdminDashboard() {
+      const loginScreen = document.getElementById('admin-login-screen')
+      const dashboard = document.getElementById('admin-dashboard-screen')
+
+      // Hide login completely
+      loginScreen.style.display = 'none'
+      loginScreen.style.visibility = 'hidden'
+      loginScreen.style.opacity = '0'
+      loginScreen.style.pointerEvents = 'none'
+
+      // Show dashboard
+      dashboard.style.display = 'block'
+      dashboard.style.visibility = 'visible'
+      dashboard.style.opacity = '1'
+      dashboard.classList.add('visible')
+
+      document.body.className = 'dashboard-page'
+      loadTeams()
+      loadAllPlayers()
+      loadAllPredictions()
+      loadMatches()
+    }
+
+    // ===== DO NOT AUTO LOGIN — only show dashboard if admin clicked login =====
+    // We removed onAuthStateChanged auto-login to prevent the bug
+
+    // ===== TABS =====
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'))
+        document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.add('hidden'))
+        tab.classList.add('active')
+        document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden')
+      })
+    })
+
+    // ===== LOGOUT =====
+    document.getElementById('admin-logout-btn').addEventListener('click', async () => {
+      isAdminVerified = false
+      await signOut(auth)
+      window.location.href = 'login.html'
+    })
+
+    // ===== LOAD TEAMS =====
+    async function loadTeams() {
+      const snap = await getDocs(collection(db, 'teams'))
+      allTeams = []
+      snap.forEach(d => allTeams.push({ id: d.id, ...d.data() }))
+      renderTeamsAdmin()
+      populateTeamDropdowns()
+    }
+
+    function renderTeamsAdmin() {
+      const list = document.getElementById('teams-list-admin')
+      if (allTeams.length === 0) {
+        list.innerHTML = '<p class="lb-loading">No teams yet!</p>'
+        return
+      }
+      let html = ''
+      allTeams.forEach(team => {
+        html += `
+          <div class="admin-list-item">
+            <span class="admin-item-icon">${team.flag || '🏏'}</span>
+            <div class="admin-item-info">
+              <span class="admin-item-name">${team.name}</span>
+              <span class="admin-item-sub">${team.shortName || ''}</span>
+            </div>
+            <button class="btn-delete" data-id="${team.id}">🗑️</button>
+          </div>`
+      })
+      list.innerHTML = html
+      list.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteTeam(btn.dataset.id))
+      })
+    }
+
+    function populateTeamDropdowns() {
+      const selects = ['player-team', 'filter-team', 'score-team', 'match-team1', 'match-team2']
+      selects.forEach(id => {
+        const sel = document.getElementById(id)
+        const firstOpt = sel.options[0].outerHTML
+        sel.innerHTML = firstOpt
+        allTeams.forEach(team => {
+          sel.innerHTML += `<option value="${team.id}">${team.flag || '🏏'} ${team.name}</option>`
+        })
+      })
+    }
+
+    // ===== ADD TEAM =====
+    document.getElementById('btn-add-team').addEventListener('click', async () => {
+      const name = document.getElementById('team-name').value.trim()
+      const shortName = document.getElementById('team-short').value.trim()
+      const flag = document.getElementById('team-flag').value.trim()
+      const msg = document.getElementById('team-msg')
+
+      if (!name) {
+        msg.textContent = '❌ Team name is required!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      try {
+        await addDoc(collection(db, 'teams'), {
+          name, shortName, flag: flag || '🏏',
+          createdAt: serverTimestamp()
+        })
+        msg.textContent = '✅ Team added!'
+        msg.className = 'form-msg success'
+        document.getElementById('team-name').value = ''
+        document.getElementById('team-short').value = ''
+        document.getElementById('team-flag').value = ''
+        loadTeams()
+      } catch (e) {
+        msg.textContent = '❌ ' + e.message
+        msg.className = 'form-msg error'
+      }
+    })
+
+    async function deleteTeam(id) {
+      if (!confirm('Delete this team?')) return
+      await deleteDoc(doc(db, 'teams', id))
+      loadTeams()
+    }
+
+    // ===== LOAD PLAYERS =====
+    async function loadAllPlayers() {
+      const snap = await getDocs(collection(db, 'players'))
+      allPlayers = []
+      snap.forEach(d => allPlayers.push({ id: d.id, ...d.data() }))
+      renderPlayersAdmin(allPlayers)
+    }
+
+    function roleIcon(r) {
+      return r === 'Batsman' ? '🏏' : r === 'Bowler' ? '🤾' :
+             r === 'All-Rounder' ? '🌟' : '🧤'
+    }
+
+    // ===== RENDER PLAYERS =====
+    function renderPlayersAdmin(players) {
+      const list = document.getElementById('players-list-admin')
+      if (players.length === 0) {
+        list.innerHTML = '<p class="lb-loading">No players found!</p>'
+        return
+      }
+
+      let html = ''
+      players.forEach(player => {
+        const team = allTeams.find(t => t.id === player.teamId)
+        const rightLabel = player.status === 'red' ? '🔴 Not Playing' : '🟢 Playing'
+        const blueLabel = player.blueLight === 'yes' ? '🔵 Played Last' : '⚫ No Blue'
+        const rightColor = player.status === 'red' ? '#ff5050' : '#43e97b'
+        const blueColor = player.blueLight === 'yes' ? '#4fc3f7' : 'rgba(255,255,255,0.35)'
+
+        html += `
+          <div class="admin-list-item">
+            <div style="flex-shrink:0">
+              ${player.photoUrl
+                ? `<img src="${player.photoUrl}" alt="${player.name}"
+                    style="width:52px;height:52px;border-radius:50%;
+                    object-fit:cover;border:2px solid rgba(255,255,255,0.2)"/>`
+                : `<div style="width:52px;height:52px;border-radius:50%;
+                    background:linear-gradient(135deg,#ff6ec7,#f9f047);
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:1.3rem;font-weight:700;color:white">
+                    ${player.name[0].toUpperCase()}
+                   </div>`
+              }
+            </div>
+            <div class="admin-item-info">
+              <span class="admin-item-name">${player.name}</span>
+              <span class="admin-item-sub">
+                ${team ? team.flag + ' ' + team.name : player.teamId} •
+                ${player.role} • ${player.points || 0} pts
+              </span>
+              <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                <span style="font-size:0.7rem;font-weight:600;
+                  padding:2px 8px;border-radius:10px;
+                  color:${blueColor};
+                  background:rgba(79,195,247,0.08);
+                  border:1px solid ${blueColor}40">
+                  ${blueLabel}
+                </span>
+                <span style="font-size:0.7rem;font-weight:600;
+                  padding:2px 8px;border-radius:10px;
+                  color:${rightColor};
+                  background:rgba(67,233,123,0.08);
+                  border:1px solid ${rightColor}40">
+                  ${rightLabel}
+                </span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;
+              gap:8px;align-items:flex-end;flex-shrink:0">
+              <div class="admin-light-control">
+                <span class="admin-light-label">🔵 Left</span>
+                <select class="admin-select-sm"
+                  onchange="updatePlayerBlueLight('${player.id}', this.value)">
+                  <option value="no" ${player.blueLight !== 'yes' ? 'selected' : ''}>⚫ Off</option>
+                  <option value="yes" ${player.blueLight === 'yes' ? 'selected' : ''}>🔵 On</option>
+                </select>
+              </div>
+              <div class="admin-light-control">
+                <span class="admin-light-label">Right</span>
+                <select class="admin-select-sm"
+                  onchange="updatePlayerStatus('${player.id}', this.value)">
+                  <option value="green" ${player.status === 'green' ? 'selected' : ''}>🟢 Playing</option>
+                  <option value="red" ${player.status === 'red' ? 'selected' : ''}>🔴 Not Playing</option>
+                  <option value="off" ${player.status === 'off' ? 'selected' : ''}>⚫ Off</option>
+                </select>
+              </div>
+              <button class="btn-delete" data-id="${player.id}">🗑️</button>
+            </div>
+          </div>`
+      })
+
+      list.innerHTML = html
+      list.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deletePlayer(btn.dataset.id))
+      })
+    }
+
+    window.updatePlayerStatus = async function(playerId, status) {
+      try {
+        await updateDoc(doc(db, 'players', playerId), { status })
+        await loadAllPlayers()
+      } catch(e) { alert('❌ ' + e.message) }
+    }
+
+    window.updatePlayerBlueLight = async function(playerId, blueLight) {
+      try {
+        await updateDoc(doc(db, 'players', playerId), { blueLight })
+        await loadAllPlayers()
+      } catch(e) { alert('❌ ' + e.message) }
+    }
+
+    document.getElementById('filter-team').addEventListener('change', () => {
+      const teamId = document.getElementById('filter-team').value
+      renderPlayersAdmin(teamId ? allPlayers.filter(p => p.teamId === teamId) : allPlayers)
+    })
+
+    // ===== ADD PLAYER =====
+    document.getElementById('btn-add-player').addEventListener('click', async () => {
+      const teamId = document.getElementById('player-team').value
+      const name = document.getElementById('player-name').value.trim()
+      const role = document.getElementById('player-role').value
+      const points = parseInt(document.getElementById('player-points').value) || 0
+      const blueLight = document.getElementById('player-blue-light').value
+      const status = document.getElementById('player-status').value
+      const photoUrl = document.getElementById('player-photo').value.trim()
+      const msg = document.getElementById('player-msg')
+
+      if (!teamId || !name) {
+        msg.textContent = '❌ Please fill all required fields!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      try {
+        await addDoc(collection(db, 'players'), {
+          name, teamId, role, points,
+          blueLight: blueLight || 'no',
+          status: status || 'green',
+          photoUrl: photoUrl || '',
+          createdAt: serverTimestamp()
+        })
+        msg.textContent = '✅ Player added successfully!'
+        msg.className = 'form-msg success'
+        document.getElementById('player-name').value = ''
+        document.getElementById('player-points').value = '0'
+        document.getElementById('player-photo').value = ''
+        document.getElementById('player-blue-light').value = 'no'
+        document.getElementById('player-status').value = 'green'
+        loadAllPlayers()
+      } catch (e) {
+        msg.textContent = '❌ ' + e.message
+        msg.className = 'form-msg error'
+      }
+    })
+
+    async function deletePlayer(id) {
+      if (!confirm('Delete this player?')) return
+      await deleteDoc(doc(db, 'players', id))
+      loadAllPlayers()
+    }
+
+    // ===== LOAD MATCHES =====
+    async function loadMatches() {
+      const snap = await getDocs(collection(db, 'matches'))
+      const list = document.getElementById('matches-list-admin')
+
+      if (snap.empty) {
+        list.innerHTML = '<p class="lb-loading">No matches yet!</p>'
+        return
+      }
+
+      let html = ''
+      snap.forEach(d => {
+        const m = d.data()
+        const statusClass = m.status === 'live' ? 'match-live' :
+                            m.status === 'completed' ? 'match-completed' : 'match-upcoming'
+        const statusText = m.status === 'live' ? '🔴 Live' :
+                           m.status === 'completed' ? '✅ Completed' : '⏳ Upcoming'
+
+        html += `
+          <div class="admin-match-card">
+            <div class="admin-match-header">
+              <span class="admin-match-status ${statusClass}">${statusText}</span>
+              <button class="btn-delete" data-id="${d.id}">🗑️</button>
+            </div>
+            <div class="admin-match-teams">
+              <span>${m.team1Flag || '🏏'} ${m.team1Name}</span>
+              <span class="admin-vs">VS</span>
+              <span>${m.team2Flag || '🏏'} ${m.team2Name}</span>
+            </div>
+            <div class="admin-match-details">
+              <span>🏟️ ${m.venue || 'TBA'}</span>
+              <span>📅 ${m.date || 'TBA'}</span>
+              <span>🎯 ${m.matchType || 'T20'}</span>
+            </div>
+            <div class="admin-match-update">
+              <label>Update Status:</label>
+              <select class="admin-select-sm"
+                onchange="updateMatchStatus('${d.id}', this.value)">
+                <option value="upcoming" ${m.status === 'upcoming' ? 'selected' : ''}>⏳ Upcoming</option>
+                <option value="live" ${m.status === 'live' ? 'selected' : ''}>🔴 Live</option>
+                <option value="completed" ${m.status === 'completed' ? 'selected' : ''}>✅ Completed</option>
+              </select>
+            </div>
+          </div>`
+      })
+
+      list.innerHTML = html
+      list.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteMatch(btn.dataset.id))
+      })
+    }
+
+    // ===== ADD MATCH =====
+    document.getElementById('btn-add-match').addEventListener('click', async () => {
+      const team1Id = document.getElementById('match-team1').value
+      const team2Id = document.getElementById('match-team2').value
+      const matchType = document.getElementById('match-type').value
+      const venue = document.getElementById('match-venue').value.trim()
+      const date = document.getElementById('match-date').value
+      const status = document.getElementById('match-status').value
+      const msg = document.getElementById('match-msg')
+
+      if (!team1Id || !team2Id) {
+        msg.textContent = '❌ Please select both teams!'
+        msg.className = 'form-msg error'; return
+      }
+      if (team1Id === team2Id) {
+        msg.textContent = '❌ Teams cannot be the same!'
+        msg.className = 'form-msg error'; return
+      }
+      if (!venue) {
+        msg.textContent = '❌ Please enter venue!'
+        msg.className = 'form-msg error'; return
+      }
+      if (!date) {
+        msg.textContent = '❌ Please select match date!'
+        msg.className = 'form-msg error'; return
+      }
+
+      const team1 = allTeams.find(t => t.id === team1Id)
+      const team2 = allTeams.find(t => t.id === team2Id)
+
+      try {
+        if (status === 'live') {
+          const existingSnap = await getDocs(collection(db, 'matches'))
+          for (const d of existingSnap.docs) {
+            if (d.data().status === 'live') {
+              await updateDoc(doc(db, 'matches', d.id), { status: 'upcoming' })
+            }
+          }
+        }
+
+        await addDoc(collection(db, 'matches'), {
+          team1Id, team1Name: team1.name, team1Flag: team1.flag || '🏏',
+          team2Id, team2Name: team2.name, team2Flag: team2.flag || '🏏',
+          matchType, venue, date, status,
+          createdAt: serverTimestamp()
+        })
+
+        msg.textContent = '✅ Match created successfully!'
+        msg.className = 'form-msg success'
+        document.getElementById('match-team1').value = ''
+        document.getElementById('match-team2').value = ''
+        document.getElementById('match-venue').value = ''
+        document.getElementById('match-date').value = ''
+        loadMatches()
+      } catch (e) {
+        msg.textContent = '❌ ' + e.message
+        msg.className = 'form-msg error'
+      }
+    })
+
+    window.updateMatchStatus = async function(matchId, status) {
+      try {
+        if (status === 'live') {
+          const snap = await getDocs(collection(db, 'matches'))
+          for (const d of snap.docs) {
+            if (d.id !== matchId && d.data().status === 'live') {
+              await updateDoc(doc(db, 'matches', d.id), { status: 'upcoming' })
+            }
+          }
+        }
+        await updateDoc(doc(db, 'matches', matchId), { status })
+        loadMatches()
+      } catch (e) { alert('❌ ' + e.message) }
+    }
+
+    async function deleteMatch(id) {
+      if (!confirm('Delete this match?')) return
+      await deleteDoc(doc(db, 'matches', id))
+      loadMatches()
+    }
+
+    // ===== SCORES =====
+    document.getElementById('score-team').addEventListener('change', async () => {
+      const teamId = document.getElementById('score-team').value
+      const list = document.getElementById('scoring-players-list')
+      const btn = document.getElementById('btn-save-scores')
+      const resetWrapper = document.getElementById('reset-points-wrapper')
+
+      if (!teamId) {
+        list.innerHTML = ''
+        btn.style.display = 'none'
+        resetWrapper.style.display = 'none'
+        return
+      }
+
+      // ✅ Fetch ALL players for this team directly from Firebase
+      // This removes the 12 player limit from allPlayers array
+      list.innerHTML = '<p class="lb-loading">⏳ Loading players...</p>'
+
+      try {
+        const { query, where, getDocs, collection } = await import(
+          "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+        )
+
+        const q = query(
+          collection(db, 'players'),
+          where('teamId', '==', teamId)
+        )
+        const snap = await getDocs(q)
+
+        if (snap.empty) {
+          list.innerHTML = '<p class="lb-loading">No players in this team!</p>'
+          btn.style.display = 'none'
+          resetWrapper.style.display = 'none'
+          return
+        }
+
+        // ✅ Show count
+        const count = snap.size
+        list.innerHTML = `<p style="color:rgba(255,255,255,0.6);
+          font-size:0.82rem;margin-bottom:12px">
+          ${count} players found (max 25 per team)
+        </p>`
+
+        // ✅ Limit to 25 players
+        let playerCount = 0
+        let html = ''
+
+        snap.forEach(d => {
+          if (playerCount >= 25) return
+          const player = { id: d.id, ...d.data() }
+          playerCount++
+
+          html += `
+            <div class="scoring-player-row">
+              ${player.photoUrl
+                ? `<img src="${player.photoUrl}" alt="${player.name}"
+                    style="width:44px;height:44px;border-radius:50%;
+                    object-fit:cover;flex-shrink:0;
+                    border:2px solid rgba(255,255,255,0.2)"/>`
+                : `<div style="width:44px;height:44px;border-radius:50%;
+                    background:linear-gradient(135deg,#ff6ec7,#f9f047);
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:1.2rem;font-weight:700;color:white;flex-shrink:0">
+                    ${player.name[0].toUpperCase()}
+                  </div>`
+              }
+              <div class="scoring-info">
+                <span class="scoring-name">${player.name}</span>
+                <span class="scoring-role">${player.role}</span>
+              </div>
+              <div class="scoring-input-wrap">
+                <input type="number" class="scoring-input"
+                  data-id="${player.id}"
+                  value="${player.points || 0}" min="0" max="9999"/>
+                <span class="scoring-label">pts</span>
+              </div>
+            </div>`
+        })
+
+        list.innerHTML += html
+        btn.style.display = 'block'
+        resetWrapper.style.display = 'block'
+        resetWrapper.dataset.teamId = teamId
+
+      } catch(e) {
+        list.innerHTML = `<p class="lb-loading">❌ Error: ${e.message}</p>`
+        console.error(e)
+      }
+    })
+
+    // ===== RESET POINTS TO 1 =====
+    document.getElementById('btn-reset-points').addEventListener('click', async () => {
+      const teamId = document.getElementById('reset-points-wrapper').dataset.teamId
+      const msg = document.getElementById('reset-msg')
+      const btn = document.getElementById('btn-reset-points')
+
+      if (!teamId) return
+      if (!confirm('Reset ALL players points to 1 for this team?')) return
+
+      btn.textContent = '⏳ Resetting...'
+      btn.disabled = true
+
+      try {
+        const players = allPlayers.filter(p => p.teamId === teamId)
+        const batch = writeBatch(db)
+
+        players.forEach(player => {
+          const playerRef = doc(db, 'players', player.id)
+          batch.update(playerRef, { points: 1 })
+        })
+
+        await batch.commit()
+
+        msg.textContent = `✅ Reset ${players.length} players to 1 point!`
+        msg.className = 'form-msg success'
+        btn.textContent = '🔄 Reset All Players Points to 1'
+        btn.disabled = false
+
+        // Refresh player list and scoring list
+        await loadAllPlayers()
+
+        // Re-trigger score team change to refresh inputs
+        document.getElementById('score-team').dispatchEvent(new Event('change'))
+
+      } catch (e) {
+        msg.textContent = '❌ ' + e.message
+        msg.className = 'form-msg error'
+        btn.textContent = '🔄 Reset All Players Points to 1'
+        btn.disabled = false
+      }
+    })
+
+    document.getElementById('btn-save-scores').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-save-scores')
+      const msg = document.getElementById('scores-msg')
+      const inputs = document.querySelectorAll('.scoring-input')
+
+      btn.textContent = '⏳ Saving...'
+      btn.disabled = true
+
+      try {
+        const updates = []
+        inputs.forEach(input => {
+          updates.push(updateDoc(doc(db, 'players', input.dataset.id), {
+            points: parseInt(input.value) || 0
+          }))
+        })
+        await Promise.all(updates)
+        msg.textContent = '✅ Scores updated!'
+        msg.className = 'form-msg success'
+        btn.textContent = '💾 Save All Scores'
+        btn.disabled = false
+        loadAllPlayers()
+      } catch (e) {
+        msg.textContent = '❌ ' + e.message
+        msg.className = 'form-msg error'
+        btn.textContent = '💾 Save All Scores'
+        btn.disabled = false
+      }
+    })
+
+    // ===== PREDICTIONS =====
+    async function loadAllPredictions() {
+      const snap = await getDocs(collection(db, 'predictions'))
+      const list = document.getElementById('all-predictions-list')
+
+      if (snap.empty) {
+        list.innerHTML = '<p class="lb-loading">No predictions yet!</p>'
+        return
+      }
+
+      let html = ''
+      snap.forEach(d => {
+        const p = d.data()
+        const statusClass = p.isCorrect === true ? 'correct' :
+                            p.isCorrect === false ? 'wrong' : 'pending'
+        const statusText = p.isCorrect === true ? '✅ Correct' :
+                           p.isCorrect === false ? '❌ Wrong' : '⏳ Pending'
+        const captainPlayer = p.players?.find(pl => pl.isCaptain)
+        const vcPlayer = p.players?.find(pl => pl.isVC)
+
+        html += `
+          <div class="admin-prediction-row">
+            <div class="admin-pred-info">
+              <span class="admin-pred-match">${p.team1} vs ${p.team2}</span>
+              <span class="admin-pred-user">👤 ${p.userEmail || p.userId}</span>
+              <span class="admin-pred-players">
+                👥 ${p.players ? p.players.length : 0} players •
+                ${p.totalPoints || 0} pts
+                ${captainPlayer ? `• 👑 C: ${captainPlayer.name}` : ''}
+                ${vcPlayer ? `• ⭐ VC: ${vcPlayer.name}` : ''}
+              </span>
+            </div>
+            <div class="admin-pred-actions">
+              <span class="prediction-status ${statusClass}">${statusText}</span>
+              <div class="admin-pred-btns">
+                <button class="btn-correct" data-id="${d.id}">✅ Correct</button>
+                <button class="btn-wrong" data-id="${d.id}">❌ Wrong</button>
+              </div>
+            </div>
+          </div>`
+      })
+
+      list.innerHTML = html
+      list.querySelectorAll('.btn-correct').forEach(btn => {
+        btn.addEventListener('click', () => markPrediction(btn.dataset.id, true))
+      })
+      list.querySelectorAll('.btn-wrong').forEach(btn => {
+        btn.addEventListener('click', () => markPrediction(btn.dataset.id, false))
+      })
+    }
+
+    async function markPrediction(predId, isCorrect) {
+      try {
+        await updateDoc(doc(db, 'predictions', predId), { isCorrect })
+        loadAllPredictions()
+      } catch (e) { alert('❌ ' + e.message) }
+    }
+  </script>
+
+</body>
+</html>

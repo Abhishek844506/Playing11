@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | Pick Your Team</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo">🏏 Playing<span>11</span></div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">🏠 Home</a></li>
+      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="nav-username">👤 Player</span>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="dashboard.html">🏠<span>Home</span></a>
+    <a href="leaderboard.html">🏆<span>Board</span></a>
+    <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
+  </nav>
+
+  <main class="dashboard-main">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <h1>🎯 Pick Your Team</h1>
+      <p>Select 11 players + 1 Impact Player</p>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div id="loading-state" class="match-card" style="text-align:center;padding:40px">
+      <p>⏳ Loading match...</p>
+    </div>
+
+    <!-- MATCH INFO BANNER -->
+    <div id="match-banner" class="match-banner hidden">
+      <div class="match-banner-teams">
+        <span id="banner-team1">Team 1</span>
+        <span class="banner-vs">VS</span>
+        <span id="banner-team2">Team 2</span>
+      </div>
+      <div class="match-banner-info">
+        <span id="banner-date">📅 Today</span>
+        <span id="banner-venue">🏟️ Venue</span>
+        <span id="banner-type">🎯 T20</span>
+      </div>
+    </div>
+
+    <!-- SELECTION COUNTER STICKY -->
+    <div class="selection-sticky hidden" id="selection-sticky">
+      <div class="selection-sticky-inner">
+        <span>Selected: <strong id="selected-count">0</strong>/12</span>
+        <span class="impact-info">⚡ 12th = Impact Player</span>
+        <button class="btn-view-team hidden" id="btn-view-team" onclick="goToReview()">
+          View My Team →
+        </button>
+      </div>
+      <div class="selected-strip" id="selected-strip"></div>
+    </div>
+
+    <!-- PLAYERS SECTION -->
+    <div id="players-section" class="hidden">
+
+      <!-- TEAM 1 PLAYERS -->
+      <div class="team-players-section">
+        <div class="team-players-header" id="team1-header">
+          <span class="tph-flag" id="team1-flag">🏏</span>
+          <span class="tph-name" id="team1-name">Team 1</span>
+          <span class="tph-count" id="team1-count">0 selected</span>
+        </div>
+        <div class="players-grid" id="players-grid-1"></div>
+      </div>
+
+      <!-- TEAM 2 PLAYERS -->
+      <div class="team-players-section">
+        <div class="team-players-header" id="team2-header">
+          <span class="tph-flag" id="team2-flag">🏏</span>
+          <span class="tph-name" id="team2-name">Team 2</span>
+          <span class="tph-count" id="team2-count">0 selected</span>
+        </div>
+        <div class="players-grid" id="players-grid-2"></div>
+      </div>
+
+    </div>
+
+    <!-- REVIEW SECTION -->
+    <div id="review-section" class="hidden">
+
+      <div class="review-header">
+        <button class="btn-secondary" onclick="backToSelection()">← Edit</button>
+        <h2>⭐ Your Perfect 12</h2>
+      </div>
+
+      <!-- Match Info -->
+      <div class="perfect11-match">
+        <span id="review-team1">Team 1</span>
+        <span class="vs-text">VS</span>
+        <span id="review-team2">Team 2</span>
+      </div>
+
+      <!-- Players List -->
+      <div class="perfect11-grid" id="review-grid"></div>
+
+      <!-- Impact Player -->
+      <div class="impact-player-box" id="impact-player-box"></div>
+
+      <!-- Total Points -->
+      <div class="total-points-box">
+        <span>Total Points:</span>
+        <span class="total-points-value" id="total-points">0</span>
+      </div>
+
+      <button class="btn-primary" id="btn-save" onclick="savePrediction()">
+        💾 Save My Team
+      </button>
+
+      <p id="save-msg" class="form-msg"></p>
+    </div>
+
+    <!-- RULES BUTTON -->
+    <div class="rules-fab" onclick="toggleRules()">📋 Rules</div>
+
+    <!-- RULES MODAL -->
+    <div id="rules-modal" class="rules-modal hidden">
+      <div class="rules-modal-box">
+        <div class="rules-modal-header">
+          <h3>📋 Playing11 Rules</h3>
+          <button onclick="toggleRules()">✕</button>
+        </div>
+        <div class="rules-modal-content">
+          <div class="rules-section">
+            <h4>🏆 Points Rules</h4>
+            <div class="rules-list">
+              <div class="rule-item"><span class="rule-icon">🏏</span><span>1 Run = <strong>1 Point</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">💫</span><span>Half Century = <strong>+10 Extra Points</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">💯</span><span>Century = <strong>+20 Extra Points</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">⚡</span><span>1 Wicket = <strong>10 Points</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">👑</span><span>Captain = <strong>2x Points</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">⭐</span><span>Vice Captain = <strong>1.5x Points</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">⚡</span><span>Impact Player = <strong>Normal Points</strong></span></div>
+            </div>
+          </div>
+          <div class="rules-section">
+            <h4>💡 Player Status Lights</h4>
+            <div class="rules-list">
+              <div class="rule-item"><span class="status-dot blue-dot"></span><span><strong>Blue Glow</strong> = Played last match</span></div>
+              <div class="rule-item"><span class="status-dot green-dot"></span><span><strong>Green Glow</strong> = Playing this match</span></div>
+              <div class="rule-item"><span class="status-dot red-dot"></span><span><strong>Red Glow</strong> = Not playing this match</span></div>
+            </div>
+          </div>
+          <div class="rules-section">
+            <h4>📝 Playing Rules</h4>
+            <div class="rules-list">
+              <div class="rule-item"><span class="rule-icon">✅</span><span>Select exactly <strong>11 players + 1 Impact Player</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">👑</span><span>Must select <strong>1 Captain & 1 Vice Captain</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">⏳</span><span>Can edit team until match goes <strong>Live</strong></span></div>
+              <div class="rule-item"><span class="rule-icon">🔒</span><span>Team <strong>locked</strong> once match is Live</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, collection, getDocs, query, where,
+      doc, setDoc, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+      authDomain: "predict11-fc129.firebaseapp.com",
+      projectId: "predict11-fc129",
+      storageBucket: "predict11-fc129.firebasestorage.app",
+      messagingSenderId: "634146309603",
+      appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    let currentUser = null
+    let liveMatch = null
+    let selectedPlayers = []
+    const MAX_PLAYERS = 12
+    let captainId = null
+    let vcId = null
+
+    // ===== AUTH GUARD =====
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return }
+      currentUser = user
+
+      try {
+        const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          document.getElementById('nav-username').textContent =
+            '👤 ' + (userDoc.data().username || user.email.split('@')[0])
+        }
+      } catch(e) {
+        document.getElementById('nav-username').textContent =
+          '👤 ' + user.email.split('@')[0]
+      }
+
+      loadLiveMatch()
+    })
+
+    // ===== LOAD LIVE MATCH =====
+    async function loadLiveMatch() {
+      const snap = await getDocs(collection(db, 'matches'))
+      let upcoming = null
+
+      snap.forEach(d => {
+        const m = d.data()
+        if (m.status === 'live') liveMatch = { id: d.id, ...m }
+        if (m.status === 'upcoming' && !upcoming) upcoming = { id: d.id, ...m }
+      })
+
+      if (!liveMatch) liveMatch = upcoming
+
+      document.getElementById('loading-state').classList.add('hidden')
+
+      if (!liveMatch) {
+        document.getElementById('loading-state').innerHTML = `
+          <div class="no-match-state">
+            <span>🏏</span>
+            <p>No active match right now!</p>
+            <span class="no-match-sub">Admin hasn't set a match yet.</span>
+            <a href="dashboard.html" class="btn-primary"
+              style="margin-top:16px;display:inline-block;text-decoration:none">
+              ← Back to Dashboard
+            </a>
+          </div>`
+        document.getElementById('loading-state').classList.remove('hidden')
+        return
+      }
+
+      // Show match banner
+      const banner = document.getElementById('match-banner')
+      banner.classList.remove('hidden')
+
+      document.getElementById('banner-team1').textContent =
+        (liveMatch.team1Flag || '🏏') + ' ' + liveMatch.team1Name
+      document.getElementById('banner-team2').textContent =
+        (liveMatch.team2Flag || '🏏') + ' ' + liveMatch.team2Name
+      document.getElementById('banner-type').textContent =
+        '🎯 ' + (liveMatch.matchType || 'T20')
+      document.getElementById('banner-venue').textContent =
+        '🏟️ ' + (liveMatch.venue || 'TBA')
+
+      const formattedDate = liveMatch.date ?
+        new Date(liveMatch.date).toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        }) : 'Today'
+      document.getElementById('banner-date').textContent = '📅 ' + formattedDate
+
+      // Set team headers
+      document.getElementById('team1-flag').textContent = liveMatch.team1Flag || '🏏'
+      document.getElementById('team1-name').textContent = liveMatch.team1Name
+      document.getElementById('team2-flag').textContent = liveMatch.team2Flag || '🏏'
+      document.getElementById('team2-name').textContent = liveMatch.team2Name
+
+      await loadPlayers()
+
+      document.getElementById('players-section').classList.remove('hidden')
+      document.getElementById('selection-sticky').classList.remove('hidden')
+    }
+
+    // ===== LOAD PLAYERS =====
+    async function loadPlayers() {
+      const grid1 = document.getElementById('players-grid-1')
+      const grid2 = document.getElementById('players-grid-2')
+
+      grid1.innerHTML = '<p class="loading-text">⏳ Loading...</p>'
+      grid2.innerHTML = '<p class="loading-text">⏳ Loading...</p>'
+
+      const q1 = query(collection(db, 'players'),
+        where('teamId', '==', liveMatch.team1Id))
+      const q2 = query(collection(db, 'players'),
+        where('teamId', '==', liveMatch.team2Id))
+
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)])
+
+      grid1.innerHTML = renderPlayers(snap1)
+      grid2.innerHTML = renderPlayers(snap2)
+
+      document.querySelectorAll('.player-card').forEach(card => {
+        card.addEventListener('click', () => togglePlayer(card))
+      })
+    }
+
+    // ===== ROLE ICON =====
+    function roleIcon(role) {
+      return role === 'Batsman' ? '🏏' :
+             role === 'Bowler' ? '🤾' :
+             role === 'All-Rounder' ? '🌟' : '🧤'
+    }
+
+    // ===== RENDER PLAYERS =====
+    function renderPlayers(snapshot) {
+      if (snapshot.empty) return '<p class="loading-text">No players found!</p>'
+
+      let html = ''
+      snapshot.forEach(d => {
+        const p = d.data()
+
+        // ✅ Debug — check what data is coming
+        console.log('Player:', p.name, '| status:', p.status, '| blueLight:', p.blueLight)
+
+        const icon = roleIcon(p.role)
+        const roleColor = p.role === 'Batsman' ? '#f9f047' :
+                          p.role === 'Bowler' ? '#38d4c8' :
+                          p.role === 'All-Rounder' ? '#ff9a3c' : '#ff6ec7'
+
+        // ✅ Right light
+        const status = p.status || 'green'
+        const rightColor = status === 'red' ? '#ff5050' : '#43e97b'
+        const showRight = status !== 'off'
+
+        // ✅ Left blue light
+        const showBlue = p.blueLight === 'yes'
+
+        html += `
+          <div class="player-card"
+            id="pcard-${d.id}"
+            data-id="${d.id}"
+            data-name="${p.name}"
+            data-role="${p.role}"
+            data-points="${p.points || 0}"
+            data-status="${status}"
+            data-blue="${p.blueLight || 'no'}">
+
+            <!-- LEFT: Blue Light -->
+            ${showBlue ? `
+              <div style="
+                position:absolute;
+                top:8px;
+                left:8px;
+                width:10px;
+                height:10px;
+                border-radius:50%;
+                background:#4fc3f7;
+                box-shadow:0 0 8px #4fc3f7, 0 0 16px #4fc3f7;
+                z-index:10;
+                animation:glowPulse 1.5s infinite">
+              </div>` : ''}
+
+            <!-- RIGHT: Green/Red Light -->
+            ${showRight ? `
+              <div style="
+                position:absolute;
+                top:8px;
+                right:8px;
+                width:10px;
+                height:10px;
+                border-radius:50%;
+                background:${rightColor};
+                box-shadow:0 0 8px ${rightColor}, 0 0 16px ${rightColor};
+                z-index:10;
+                animation:glowPulse 1.5s infinite">
+              </div>` : ''}
+
+            <div class="player-card-inner">
+              ${p.photoUrl
+                ? `<img src="${p.photoUrl}" alt="${p.name}" class="player-photo-img"/>`
+                : `<span class="player-role-icon">${icon}</span>`
+              }
+              <span class="player-name">${p.name}</span>
+              <span class="player-role" style="color:${roleColor}">${p.role}</span>
+              <span class="player-pts">${p.points || 0} pts</span>
+            </div>
+
+          </div>`
+      })
+      return html
+    }
+
+    // ===== TOGGLE PLAYER =====
+    function togglePlayer(card) {
+      const id = card.dataset.id
+
+      if (card.classList.contains('selected')) {
+        // ✅ Deselecting — show card again
+        card.classList.remove('selected', 'impact-selected')
+        card.style.display = 'flex'
+        card.style.opacity = '1'
+        selectedPlayers = selectedPlayers.filter(p => p.id !== id)
+
+      } else {
+        if (selectedPlayers.length >= MAX_PLAYERS) {
+          showToast('❌ Maximum 12 players allowed!')
+          return
+        }
+
+        const isImpact = selectedPlayers.length === 11
+        card.classList.add('selected')
+
+        if (isImpact) {
+          card.classList.add('impact-selected')
+          showToast('⚡ Impact Player selected!')
+        }
+
+        // ✅ Hide card from list after selection
+        setTimeout(() => {
+          card.style.opacity = '0'
+          card.style.transform = 'scale(0.8)'
+          card.style.transition = 'all 0.3s ease'
+          setTimeout(() => {
+            card.style.display = 'none'
+          }, 300)
+        }, 100)
+
+        selectedPlayers.push({
+          id,
+          name: card.dataset.name,
+          role: card.dataset.role,
+          points: parseInt(card.dataset.points) || 0,
+          isImpact
+        })
+      }
+
+      updateCounter()
+      updateSelectedStrip()
+      updateTeamCounts()
+    }
+
+    // ===== DESELECT BUTTON =====
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('player-deselect-btn')) {
+        e.stopPropagation()
+        const id = e.target.dataset.id
+
+        // ✅ Show card back in list
+        const card = document.querySelector(`.player-card[data-id="${id}"]`)
+        if (card) {
+          card.classList.remove('selected', 'impact-selected')
+          card.style.display = 'flex'
+          card.style.opacity = '1'
+          card.style.transform = 'scale(1)'
+          card.querySelector('.player-deselect-btn').classList.add('hidden')
+        }
+
+        selectedPlayers = selectedPlayers.filter(p => p.id !== id)
+        updateCounter()
+        updateSelectedStrip()
+        updateTeamCounts()
+      }
+    })
+
+    // ===== UPDATE COUNTER =====
+    function updateCounter() {
+      const count = selectedPlayers.length
+      document.getElementById('selected-count').textContent = count
+      const btn = document.getElementById('btn-view-team')
+      count >= 11 ? btn.classList.remove('hidden') : btn.classList.add('hidden')
+    }
+
+    // ===== UPDATE TEAM COUNTS =====
+    function updateTeamCounts() {
+      const t1 = selectedPlayers.filter(p => {
+        return document.querySelector(`#players-grid-1 .player-card[data-id="${p.id}"]`)
+      })
+      const t2 = selectedPlayers.filter(p => {
+        return document.querySelector(`#players-grid-2 .player-card[data-id="${p.id}"]`)
+      })
+      document.getElementById('team1-count').textContent = t1.length + ' selected'
+      document.getElementById('team2-count').textContent = t2.length + ' selected'
+    }
+
+    // ===== UPDATE SELECTED STRIP =====
+    function updateSelectedStrip() {
+      const strip = document.getElementById('selected-strip')
+      if (selectedPlayers.length === 0) { strip.innerHTML = ''; return }
+
+      strip.innerHTML = selectedPlayers.map(p => `
+        <div class="strip-player ${p.isImpact ? 'strip-impact' : ''}">
+          <span>${roleIcon(p.role)}</span>
+          <span class="strip-name">${p.name.split(' ')[0]}</span>
+          ${p.isImpact ? '<span class="strip-impact-badge">⚡</span>' : ''}
+          <button class="strip-remove-btn player-deselect-btn"
+            data-id="${p.id}">✕</button>
+        </div>`).join('')
+    }
+
+    // ===== SHOW TOAST =====
+    function showToast(msg) {
+      let toast = document.getElementById('toast')
+      if (!toast) {
+        toast = document.createElement('div')
+        toast.id = 'toast'
+        toast.className = 'toast'
+        document.body.appendChild(toast)
+      }
+      toast.textContent = msg
+      toast.classList.add('show')
+      setTimeout(() => toast.classList.remove('show'), 2500)
+    }
+
+    // ===== GO TO REVIEW =====
+    window.goToReview = function() {
+      document.getElementById('players-section').classList.add('hidden')
+      document.getElementById('selection-sticky').classList.add('hidden')
+      document.getElementById('match-banner').classList.add('hidden')
+      document.getElementById('review-section').classList.remove('hidden')
+
+      document.getElementById('review-team1').textContent =
+        (liveMatch.team1Flag || '🏏') + ' ' + liveMatch.team1Name
+      document.getElementById('review-team2').textContent =
+        (liveMatch.team2Flag || '🏏') + ' ' + liveMatch.team2Name
+
+      renderReview()
+    }
+
+    // ===== RENDER REVIEW =====
+    function renderReview() {
+      const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
+      const impactPlayer = selectedPlayers.find(p => p.isImpact)
+
+      let html = `
+        <div class="captain-instruction">
+          <span>👑</span>
+          <p>Select your <strong>Captain</strong> (2x points) and
+             <strong>Vice Captain</strong> (1.5x points)</p>
+        </div>`
+
+      regularPlayers.forEach((p, i) => {
+        const isCaptain = captainId === p.id
+        const isVC = vcId === p.id
+
+        html += `
+          <div class="perfect11-player
+            ${isCaptain ? 'player-captain' : ''}
+            ${isVC ? 'player-vc' : ''}"
+            data-id="${p.id}" data-role="${p.role}">
+            <span class="p11-num">${i + 1}</span>
+            <span class="p11-icon">${roleIcon(p.role)}</span>
+            <div class="p11-info">
+              <span class="p11-name">${p.name}</span>
+              <span class="p11-role">${p.role}</span>
+            </div>
+            <div class="captain-vc-btns">
+              <button class="btn-captain ${isCaptain ? 'active' : ''}"
+                onclick="setCaptain('${p.id}')">
+                ${isCaptain ? '👑 C' : 'C'}
+              </button>
+              <button class="btn-vc ${isVC ? 'active' : ''}"
+                onclick="setVC('${p.id}')">
+                ${isVC ? '⭐ VC' : 'VC'}
+              </button>
+            </div>
+            <span class="p11-pts">
+              ${isCaptain
+                ? `<span class="multiplier-badge">2x</span>`
+                : isVC
+                ? `<span class="multiplier-badge vc-badge">1.5x</span>`
+                : ''}
+              ${isCaptain ? p.points * 2 :
+                isVC ? p.points * 1.5 :
+                p.points} pts
+            </span>
+          </div>`
+      })
+
+      document.getElementById('review-grid').innerHTML = html
+
+      // Impact player
+      if (impactPlayer) {
+        document.getElementById('impact-player-box').innerHTML = `
+          <div class="impact-box-inner">
+            <span class="impact-label">⚡ Impact Player</span>
+            <span class="impact-icon">${roleIcon(impactPlayer.role)}</span>
+            <span class="impact-name">${impactPlayer.name}</span>
+            <span class="impact-role">${impactPlayer.role}</span>
+            <span class="impact-pts">${impactPlayer.points} pts</span>
+          </div>`
+      }
+
+      updateTotalPoints()
+    }
+
+    // ===== SET CAPTAIN =====
+    window.setCaptain = function(id) {
+      if (vcId === id) vcId = null
+      captainId = captainId === id ? null : id
+      renderReview()
+    }
+
+    // ===== SET VICE CAPTAIN =====
+    window.setVC = function(id) {
+      if (captainId === id) captainId = null
+      vcId = vcId === id ? null : id
+      renderReview()
+    }
+
+    // ===== UPDATE TOTAL POINTS =====
+    function updateTotalPoints() {
+      const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
+      const impactPlayer = selectedPlayers.find(p => p.isImpact)
+
+      let total = 0
+
+      regularPlayers.forEach(p => {
+        let pts = parseInt(p.points) || 0
+
+        // ✅ Multiply captain by 2x
+        if (p.id === captainId) {
+          pts = pts * 2
+        }
+        // ✅ Multiply vice captain by 1.5x
+        else if (p.id === vcId) {
+          pts = pts * 1.5
+        }
+
+        total += pts
+      })
+
+      // ✅ Add impact player points normally
+      if (impactPlayer) {
+        total += parseInt(impactPlayer.points) || 0
+      }
+
+      document.getElementById('total-points').textContent = total
+
+      // Enable/disable save button
+      const btn = document.getElementById('btn-save')
+      if (!captainId || !vcId) {
+        btn.disabled = true
+        btn.textContent = '⚠️ Select Captain & Vice Captain first!'
+        btn.style.opacity = '0.7'
+      } else {
+        btn.disabled = false
+        btn.textContent = '💾 Save My Team'
+        btn.style.opacity = '1'
+      }
+    }
+
+    // ===== BACK TO SELECTION =====
+    window.backToSelection = function() {
+      document.getElementById('review-section').classList.add('hidden')
+      document.getElementById('players-section').classList.remove('hidden')
+      document.getElementById('selection-sticky').classList.remove('hidden')
+      document.getElementById('match-banner').classList.remove('hidden')
+    }
+
+    // ===== SAVE PREDICTION =====
+    window.savePrediction = async function() {
+      const btn = document.getElementById('btn-save')
+      const msg = document.getElementById('save-msg')
+
+      btn.textContent = '⏳ Saving...'
+      btn.disabled = true
+
+      try {
+        const predictionId = currentUser.uid + '_' + Date.now()
+        const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
+        const impactPlayer = selectedPlayers.find(p => p.isImpact)
+
+        let finalTotal = 0
+        const playersWithRoles = regularPlayers.map(p => {
+          let pts = parseInt(p.points) || 0
+          let multiplier = 1
+          if (p.id === captainId) { pts = pts * 2; multiplier = 2 }
+          else if (p.id === vcId) { pts = pts * 1.5; multiplier = 1.5 }
+          finalTotal += pts
+          return {
+            ...p,
+            finalPoints: pts,
+            multiplier,
+            isCaptain: p.id === captainId,
+            isVC: p.id === vcId
+          }
+        })
+
+        if (impactPlayer) finalTotal += parseInt(impactPlayer.points) || 0
+
+        await setDoc(doc(db, 'predictions', predictionId), {
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+          matchId: liveMatch.id,
+          matchDate: liveMatch.date || '',
+          team1: liveMatch.team1Name,
+          team1Id: liveMatch.team1Id,
+          team1Flag: liveMatch.team1Flag || '🏏',
+          team2: liveMatch.team2Name,
+          team2Id: liveMatch.team2Id,
+          team2Flag: liveMatch.team2Flag || '🏏',
+          players: playersWithRoles,
+          captainId: captainId,
+          vcId: vcId,
+          impactPlayer: impactPlayer || null,
+          totalPoints: finalTotal,
+          isCorrect: null,
+          createdAt: serverTimestamp()
+        })
+
+        msg.textContent = '✅ Team saved successfully!'
+        msg.className = 'form-msg success'
+        btn.textContent = '✅ Saved!'
+
+        setTimeout(() => {
+          window.location.href = 'dashboard.html'
+        }, 1500)
+
+      } catch (error) {
+        msg.textContent = '❌ ' + error.message
+        msg.className = 'form-msg error'
+        btn.textContent = '💾 Save My Team'
+        btn.disabled = false
+        console.error(error)
+      }
+    }
+
+    // ===== RULES TOGGLE =====
+    window.toggleRules = function() {
+      document.getElementById('rules-modal').classList.toggle('hidden')
+    }
+
+    // ===== LOGOUT =====
+    window.handleLogout = async function() {
+      await signOut(auth)
+      window.location.href = 'login.html'
+    }
+  </script>
+
+</body>
+</html>

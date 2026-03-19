@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | My Team</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo">🏏 Playing<span>11</span></div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">🏠 Home</a></li>
+      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="nav-username">👤 Player</span>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="dashboard.html">🏠<span>Home</span></a>
+    <a href="leaderboard.html">🏆<span>Board</span></a>
+    <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
+  </nav>
+
+  <main class="dashboard-main">
+
+    <!-- BACK BUTTON -->
+    <div class="back-row">
+      <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loading-state" style="text-align:center;padding:60px 20px;color:white">
+      <div style="font-size:3rem">⏳</div>
+      <p style="margin-top:12px;color:rgba(255,255,255,0.7)">Loading your team...</p>
+    </div>
+
+    <!-- TEAM CONTENT -->
+    <div id="team-content" class="hidden">
+
+      <!-- MATCH INFO -->
+      <div class="myteam-match-banner">
+        <div class="myteam-status" id="match-status-badge">⏳ Loading...</div>
+        <div class="myteam-match-teams">
+          <div class="myteam-team">
+            <span class="myteam-flag" id="team1-flag">🏏</span>
+            <span class="myteam-name" id="team1-name">Team 1</span>
+          </div>
+          <span class="myteam-vs">VS</span>
+          <div class="myteam-team">
+            <span class="myteam-flag" id="team2-flag">🏏</span>
+            <span class="myteam-name" id="team2-name">Team 2</span>
+          </div>
+        </div>
+        <div class="myteam-match-info">
+          <span id="match-date">📅 Loading...</span>
+          <span id="match-venue">🏟️ Loading...</span>
+          <span id="match-type">🎯 T20</span>
+        </div>
+      </div>
+
+      <!-- POINTS SUMMARY -->
+      <div class="myteam-points-summary">
+        <div class="myteam-stat">
+          <span class="myteam-stat-value" id="total-players">--</span>
+          <span class="myteam-stat-label">Players</span>
+        </div>
+        <div class="myteam-stat highlight">
+          <span class="myteam-stat-value gradient-text" id="total-points">--</span>
+          <span class="myteam-stat-label">Total Points</span>
+        </div>
+        <div class="myteam-stat">
+          <span class="myteam-stat-value" id="prediction-status-text">⏳</span>
+          <span class="myteam-stat-label">Status</span>
+        </div>
+      </div>
+
+      <!-- CRICKET FIELD -->
+      <div class="cricket-field-wrapper">
+        <div class="cricket-field">
+
+          <!-- Decorative elements -->
+          <div class="pitch-center"></div>
+          <div class="pitch-circle"></div>
+
+          <!-- ROW 1: BATSMEN -->
+          <div class="field-section" id="bat-section">
+            <div class="field-section-label">BATSMEN</div>
+            <div class="field-row" id="bat-row"></div>
+          </div>
+
+          <!-- ROW 2: ALL ROUNDERS -->
+          <div class="field-section" id="ar-section">
+            <div class="field-section-label">ALL ROUNDERS</div>
+            <div class="field-row" id="ar-row"></div>
+          </div>
+
+          <!-- ROW 3: BOWLERS + IMPACT -->
+          <div class="field-section" id="bowl-section">
+            <div class="field-section-label">BOWLERS</div>
+            <div class="field-row" id="bowl-row"></div>
+          </div>
+
+          <!-- WICKET KEEPERS (if any) -->
+          <div class="field-section" id="wk-section">
+            <div class="field-section-label">WICKET KEEPERS</div>
+            <div class="field-row" id="wk-row"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+      authDomain: "predict11-fc129.firebaseapp.com",
+      projectId: "predict11-fc129",
+      storageBucket: "predict11-fc129.firebasestorage.app",
+      messagingSenderId: "634146309603",
+      appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return }
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          document.getElementById('nav-username').textContent =
+            '👤 ' + (userDoc.data().username || user.email.split('@')[0])
+        }
+      } catch(e) {}
+      loadMyTeam(user.uid)
+    })
+
+    async function loadMyTeam(uid) {
+      try {
+        const q = query(collection(db, 'predictions'), where('userId', '==', uid))
+        const predSnap = await getDocs(q)
+
+        if (predSnap.empty) {
+          document.getElementById('loading-state').innerHTML = `
+            <div style="text-align:center;padding:40px">
+              <span style="font-size:3rem">🎯</span>
+              <p style="color:white;margin:12px 0">No prediction found!</p>
+              <a href="dashboard.html" style="display:inline-block;margin-top:12px;
+                padding:10px 24px;background:var(--gradient-btn);border-radius:10px;
+                text-decoration:none;color:white;font-weight:600">
+                ← Back
+              </a>
+            </div>`
+          return
+        }
+
+        const predDoc = predSnap.docs[predSnap.docs.length - 1]
+        const pred = predDoc.data()
+
+        // ✅ Fetch fresh data for all players
+        const updatedPlayers = []
+        for (const p of (pred.players || [])) {
+          try {
+            const playerDoc = await getDoc(doc(db, 'players', p.id))
+            updatedPlayers.push({
+              ...p,
+              points: playerDoc.exists() ? parseInt(playerDoc.data().points) || 0 : parseInt(p.points) || 0,
+              photoUrl: playerDoc.exists() ? playerDoc.data().photoUrl || '' : '',
+              blueLight: playerDoc.exists() ? playerDoc.data().blueLight || 'no' : 'no',
+              status: playerDoc.exists() ? playerDoc.data().status || 'green' : 'green'
+            })
+          } catch(e) {
+            updatedPlayers.push({ ...p, points: parseInt(p.points) || 0 })
+          }
+        }
+
+        // ✅ Fetch impact player
+        let updatedImpact = null
+        if (pred.impactPlayer && pred.impactPlayer.id) {
+          try {
+            const impDoc = await getDoc(doc(db, 'players', pred.impactPlayer.id))
+            updatedImpact = {
+              ...pred.impactPlayer,
+              points: impDoc.exists() ? parseInt(impDoc.data().points) || 0 : parseInt(pred.impactPlayer.points) || 0,
+              photoUrl: impDoc.exists() ? impDoc.data().photoUrl || '' : '',
+              blueLight: impDoc.exists() ? impDoc.data().blueLight || 'no' : 'no',
+              status: impDoc.exists() ? impDoc.data().status || 'green' : 'green'
+            }
+          } catch(e) {
+            updatedImpact = { ...pred.impactPlayer }
+          }
+        }
+
+        // ✅ Fetch match info
+        let matchData = null
+        if (pred.matchId) {
+          try {
+            const matchDoc = await getDoc(doc(db, 'matches', pred.matchId))
+            if (matchDoc.exists()) matchData = matchDoc.data()
+          } catch(e) {}
+        }
+
+        // Show content
+        document.getElementById('loading-state').classList.add('hidden')
+        document.getElementById('team-content').classList.remove('hidden')
+
+        renderMatchBanner(pred, matchData)
+        renderCricketField(updatedPlayers, updatedImpact, pred)
+
+      } catch(e) {
+        console.error(e)
+      }
+    }
+
+    function renderMatchBanner(pred, matchData) {
+      document.getElementById('team1-flag').textContent = matchData?.team1Flag || pred.team1Flag || '🏏'
+      document.getElementById('team1-name').textContent = pred.team1 || 'Team 1'
+      document.getElementById('team2-flag').textContent = matchData?.team2Flag || pred.team2Flag || '🏏'
+      document.getElementById('team2-name').textContent = pred.team2 || 'Team 2'
+
+      if (matchData) {
+        const statusText = matchData.status === 'live' ? '🔴 LIVE' :
+                           matchData.status === 'upcoming' ? '⏳ Upcoming' : '✅ Completed'
+        const statusClass = matchData.status === 'live' ? 'status-live' :
+                            matchData.status === 'upcoming' ? 'status-upcoming' : 'status-completed'
+        const badge = document.getElementById('match-status-badge')
+        badge.textContent = statusText
+        badge.className = 'myteam-status ' + statusClass
+
+        const formattedDate = matchData.date ?
+          new Date(matchData.date).toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric'
+          }) : 'Today'
+
+        document.getElementById('match-date').textContent = '📅 ' + formattedDate
+        document.getElementById('match-venue').textContent = '🏟️ ' + (matchData.venue || 'TBA')
+        document.getElementById('match-type').textContent = '🎯 ' + (matchData.matchType || 'T20')
+      }
+
+      const predStatus = pred.isCorrect === true ? '✅ Won' :
+                         pred.isCorrect === false ? '❌ Lost' : '⏳ Pending'
+      document.getElementById('prediction-status-text').textContent = predStatus
+    }
+
+    function renderCricketField(players, impactPlayer, pred) {
+      // ✅ Wicket Keepers treated as Batsmen
+      const batsmen = players.filter(p =>
+        p.role === 'Batsman' || p.role === 'Wicket-Keeper'
+      )
+      const allRounders = players.filter(p => p.role === 'All-Rounder')
+      const bowlers = players.filter(p => p.role === 'Bowler')
+
+      // ✅ Add impact to bowlers row
+      if (impactPlayer) bowlers.push({ ...impactPlayer, isImpact: true })
+
+      // ✅ Render rows
+      renderFieldRow('bat-row', batsmen, pred)
+      renderFieldRow('ar-row', allRounders, pred)
+      renderFieldRow('bowl-row', bowlers, pred)
+
+      // ✅ Hide WK section completely
+      document.getElementById('wk-section').style.display = 'none'
+
+      // ✅ Hide empty sections
+      if (batsmen.length === 0) document.getElementById('bat-section').style.display = 'none'
+      if (allRounders.length === 0) document.getElementById('ar-section').style.display = 'none'
+      if (bowlers.length === 0) document.getElementById('bowl-section').style.display = 'none'
+
+      // ✅ Calculate total WITH captain/vc multipliers
+      let total = 0
+      players.forEach(p => {
+        let pts = parseInt(p.points) || 0
+        if (p.id === pred.captainId) {
+          pts = pts * 2           // Captain 2x
+        } else if (p.id === pred.vcId) {
+          pts = pts * 1.5         // Vice Captain 1.5x (no rounding)
+        }
+        total += pts
+      })
+
+      // ✅ Impact player normal points
+      if (impactPlayer) total += parseInt(impactPlayer.points) || 0
+
+      document.getElementById('total-points').textContent = total
+      document.getElementById('total-players').textContent =
+        players.length + (impactPlayer ? '+1' : '')
+    }
+
+    function renderFieldRow(rowId, players, pred) {
+      const row = document.getElementById(rowId)
+      if (!players || players.length === 0) {
+        row.innerHTML = ''
+        return
+      }
+
+      let html = ''
+      players.forEach(p => {
+        const isCaptain = pred.captainId === p.id
+        const isVC = pred.vcId === p.id
+        const isImpact = p.isImpact || false
+        const showBlue = p.blueLight === 'yes'
+        const rightColor = p.status === 'red' ? '#ff5050' :
+                          p.status === 'off' ? 'transparent' : '#43e97b'
+        const showRight = p.status !== 'off'
+
+        html += `
+          <div class="field-player
+            ${isCaptain ? 'fp-captain' : ''}
+            ${isVC ? 'fp-vc' : ''}
+            ${isImpact ? 'fp-impact' : ''}">
+
+            <!-- ✅ Status lights — top corners of photo -->
+            <div class="fp-photo-wrap">
+
+              <!-- LEFT: Blue light -->
+              ${showBlue
+                ? `<div class="fp-light fp-light-left"></div>`
+                : ''}
+
+              ${showRight ? `
+                <div class="fp-light fp-light-right"
+                  style="background:${rightColor};
+                  box-shadow:0 0 6px ${rightColor},0 0 12px ${rightColor}">
+                </div>` : ''}
+
+              <!-- ✅ C / VC badge — bottom right of photo -->
+              ${isCaptain
+                ? `<div class="fp-cvbadge fp-captain-badge">C</div>`
+                : isVC
+                ? `<div class="fp-cvbadge fp-vc-badge">VC</div>`
+                : ''}
+
+              <!-- ✅ Impact badge — bottom left -->
+              ${isImpact
+                ? `<div class="fp-impact-badge">⚡</div>`
+                : ''}
+
+              <!-- Photo -->
+              ${p.photoUrl
+                ? `<img src="${p.photoUrl}" alt="${p.name}" class="fp-photo"/>`
+                : `<div class="fp-photo fp-photo-placeholder">
+                    ${p.name ? p.name[0].toUpperCase() : '?'}
+                   </div>`
+              }
+            </div>
+
+            <!-- Name & Points -->
+            <div class="fp-name">${p.name || 'Unknown'}</div>
+            <div class="fp-points">
+              ${p.id === pred.captainId
+                ? (parseInt(p.points) * 2)
+                : p.id === pred.vcId
+                ? (parseInt(p.points) * 1.5)
+                : (p.points || 0)} pts
+              ${p.id === pred.captainId
+                ? '<span style="font-size:0.55rem;color:#f9f047">(2x)</span>'
+                : p.id === pred.vcId
+                ? '<span style="font-size:0.55rem;color:#38d4c8">(1.5x)</span>'
+                : ''}
+            </div>
+
+          </div>`
+      })
+
+      row.innerHTML = html
+    }
+
+    window.handleLogout = async function() {
+      await signOut(auth)
+      window.location.href = 'login.html'
+    }
+  </script>
+
+</body>
+</html>

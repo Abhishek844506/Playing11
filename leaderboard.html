@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | Leaderboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo">🏏 Playing<span>11</span></div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">🏠 Home</a></li>
+      <li><a href="leaderboard.html" class="active">🏆 Leaderboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="nav-username">👤 Player</span>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="dashboard.html">🏠<span>Home</span></a>
+    <a href="leaderboard.html" class="active">🏆<span>Board</span></a>
+    <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
+  </nav>
+
+  <main class="dashboard-main">
+
+    <div class="page-header">
+      <h1>🏆 Leaderboard</h1>
+      <p>Top fantasy cricket predictors this season</p>
+    </div>
+
+    <!-- MATCH STATUS INFO -->
+    <div id="match-status-info"></div>
+
+    <!-- PODIUM -->
+    <div class="podium-section" id="podium-section">
+      <div class="podium-loading">⏳ Loading rankings...</div>
+    </div>
+
+    <!-- YOUR RANK -->
+    <div id="your-rank-card"></div>
+
+    <!-- FULL TABLE -->
+    <div class="leaderboard-card">
+      <div class="leaderboard-header">
+        <span>Rank</span>
+        <span>Player</span>
+        <span>Status</span>
+        <span>Points</span>
+      </div>
+      <div id="leaderboard-list">
+        <div class="lb-loading">⏳ Loading players...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- VIEW TEAM MODAL -->
+  <div id="view-team-modal" class="rules-modal hidden">
+    <div class="rules-modal-box">
+      <div class="rules-modal-header">
+        <h3 id="modal-team-title">⭐ Team</h3>
+        <button onclick="closeTeamModal()">✕</button>
+      </div>
+      <div class="rules-modal-content" id="modal-team-content">
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, collection, getDocs, doc, getDoc, query, where }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+      authDomain: "predict11-fc129.firebaseapp.com",
+      projectId: "predict11-fc129",
+      storageBucket: "predict11-fc129.firebasestorage.app",
+      messagingSenderId: "634146309603",
+      appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+    let currentUser = null
+    let isMatchLive = false
+    let currentMatchId = null
+
+    // ===== AUTH =====
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return }
+      currentUser = user
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          document.getElementById('nav-username').textContent =
+            '👤 ' + (userDoc.data().username || user.email.split('@')[0])
+        }
+      } catch(e) {}
+
+      await loadMatchStatus()
+      loadLeaderboard()
+    })
+
+    // ===== LOAD MATCH STATUS =====
+    async function loadMatchStatus() {
+      try {
+        const snap = await getDocs(collection(db, 'matches'))
+        snap.forEach(d => {
+          const m = d.data()
+          if (m.status === 'live') {
+            isMatchLive = true
+            currentMatchId = d.id
+          }
+        })
+
+        const info = document.getElementById('match-status-info')
+        if (isMatchLive) {
+          info.innerHTML = `
+            <div class="match-live-banner">
+              <span>🔴 Match is LIVE!</span>
+              <span>You can now view opponents teams</span>
+            </div>`
+        } else {
+          info.innerHTML = `
+            <div class="match-upcoming-banner">
+              <span>⏳ Match not live yet</span>
+              <span>Opponent teams hidden until match goes live</span>
+            </div>`
+        }
+      } catch(e) {
+        console.error(e)
+      }
+    }
+
+    // ===== CALCULATE TOTAL WITH MULTIPLIERS =====
+    function calculateTotal(players, captainId, vcId, impactPlayer) {
+      let total = 0
+      if (players) {
+        players.forEach(p => {
+          let pts = parseInt(p.points) || 0
+          if (p.id === captainId) pts = pts * 2
+          else if (p.id === vcId) pts = pts * 1.5
+          total += pts
+        })
+      }
+      if (impactPlayer) total += parseInt(impactPlayer.points) || 0
+      return total
+    }
+
+    // ===== LOAD LEADERBOARD =====
+    async function loadLeaderboard() {
+      try {
+        // Get all predictions
+        const predsSnap = await getDocs(collection(db, 'predictions'))
+
+        // ✅ Only include users who have created a team
+        const predsByUser = {}
+        predsSnap.forEach(d => {
+          const p = d.data()
+          if (!p.userId) return
+          // ✅ Calculate correct total with captain/vc multipliers
+          const correctTotal = calculateTotal(
+            p.players,
+            p.captainId,
+            p.vcId,
+            p.impactPlayer
+          )
+          predsByUser[p.userId] = {
+            predId: d.id,
+            totalPts: correctTotal,
+            team1: p.team1,
+            team2: p.team2,
+            players: p.players,
+            captainId: p.captainId,
+            vcId: p.vcId,
+            impactPlayer: p.impactPlayer,
+            userEmail: p.userEmail
+          }
+        })
+
+        // ✅ Only get users who have predictions
+        const usersWithPredictions = Object.keys(predsByUser)
+
+        if (usersWithPredictions.length === 0) {
+          document.getElementById('leaderboard-list').innerHTML =
+            '<div class="lb-loading">No predictions yet!</div>'
+          document.getElementById('podium-section').innerHTML =
+            '<div class="podium-loading">No players yet!</div>'
+          return
+        }
+
+        // Get user profiles for those who have predictions
+        const ranked = []
+        for (const uid of usersWithPredictions) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', uid))
+            const userData = userDoc.exists() ? userDoc.data() : {}
+            ranked.push({
+              id: uid,
+              username: userData.username || predsByUser[uid].userEmail?.split('@')[0] || 'Player',
+              ...predsByUser[uid]
+            })
+          } catch(e) {
+            ranked.push({
+              id: uid,
+              username: predsByUser[uid].userEmail?.split('@')[0] || 'Player',
+              ...predsByUser[uid]
+            })
+          }
+        }
+
+        // ✅ Sort by total points — highest first
+        ranked.sort((a, b) => b.totalPts - a.totalPts)
+
+        renderPodium(ranked)
+        renderYourRank(ranked)
+        renderTable(ranked)
+
+      } catch(e) {
+        console.error('Leaderboard error:', e)
+        document.getElementById('leaderboard-list').innerHTML =
+          `<div class="lb-loading">❌ Error: ${e.message}</div>`
+      }
+    }
+
+    // ===== RENDER PODIUM =====
+    function renderPodium(ranked) {
+      const section = document.getElementById('podium-section')
+      if (ranked.length === 0) {
+        section.innerHTML = '<div class="podium-loading">No players yet!</div>'
+        return
+      }
+
+      const medals = ['🥇', '🥈', '🥉']
+      const order = ranked.length >= 3 ? [1, 0, 2] :
+                    ranked.length === 2 ? [1, 0] : [0]
+
+      let html = '<div class="podium">'
+      order.forEach(i => {
+        if (!ranked[i]) return
+        const u = ranked[i]
+        const isYou = u.id === currentUser.uid
+        const isFirst = i === 0
+
+        html += `
+          <div class="podium-player
+            ${isFirst ? 'podium-first' : ''}
+            ${isYou ? 'podium-you' : ''}">
+            <div class="podium-medal">${medals[i] || '🏅'}</div>
+            <div class="podium-avatar">
+              ${u.username[0].toUpperCase()}
+            </div>
+            <div class="podium-name">
+              ${u.username}
+              ${isFirst ? ' 👑' : ''}
+            </div>
+            ${isYou ? '<div class="podium-you-tag">You</div>' : ''}
+            <div class="podium-points">${u.totalPts} pts</div>
+            <div class="podium-stand podium-stand-${i + 1}"></div>
+          </div>`
+      })
+      html += '</div>'
+      section.innerHTML = html
+    }
+
+    // ===== RENDER YOUR RANK =====
+    function renderYourRank(ranked) {
+      const card = document.getElementById('your-rank-card')
+      const idx = ranked.findIndex(u => u.id === currentUser.uid)
+      if (idx === -1) {
+        card.innerHTML = `
+          <div class="your-rank-inner" style="justify-content:center">
+            <p style="color:rgba(255,255,255,0.6);font-size:0.88rem">
+              🎯 Make a prediction to appear on leaderboard!
+            </p>
+          </div>`
+        return
+      }
+
+      const you = ranked[idx]
+      const rank = idx + 1
+      const rankEmoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' :
+                        rank === 3 ? '🥉' : `#${rank}`
+
+      card.innerHTML = `
+        <div class="your-rank-inner">
+          <div class="your-rank-left">
+            <span class="your-rank-label">Your Rank</span>
+            <span class="your-rank-num">${rankEmoji}</span>
+          </div>
+          <div class="your-rank-mid">
+            <span class="your-rank-name">
+              ${you.username}
+              ${rank === 1 ? ' 👑 Winner!' : ''}
+            </span>
+            <span class="your-rank-email">@${you.username}</span>
+          </div>
+          <div class="your-rank-right">
+            <span class="your-rank-pts">${you.totalPts}</span>
+            <span class="your-rank-pts-label">Total Points</span>
+          </div>
+        </div>`
+    }
+
+    // ===== RENDER TABLE =====
+    function renderTable(ranked) {
+      const list = document.getElementById('leaderboard-list')
+      if (ranked.length === 0) {
+        list.innerHTML = '<div class="lb-loading">No players yet!</div>'
+        return
+      }
+
+      let html = ''
+      ranked.forEach((u, i) => {
+        const rank = i + 1
+        const isYou = u.id === currentUser.uid
+        const isFirst = rank === 1
+        const rankDisplay = rank === 1 ? '🥇' : rank === 2 ? '🥈' :
+                            rank === 3 ? '🥉' : `#${rank}`
+        const avatar = u.username[0].toUpperCase()
+
+        html += `
+          <div class="lb-row
+            ${isYou ? 'lb-row-you' : ''}
+            ${isFirst ? 'lb-row-first' : ''}">
+            <span class="lb-rank">${rankDisplay}</span>
+            <div class="lb-player">
+              <div class="lb-avatar ${isFirst ? 'lb-avatar-first' : ''}">
+                ${avatar}
+              </div>
+              <div class="lb-player-info">
+                <span class="lb-player-name">
+                  ${u.username}
+                  ${isFirst ? '<span class="lb-winner-tag">👑 Winner</span>' : ''}
+                  ${isYou ? '<span class="lb-you-tag">👈 You</span>' : ''}
+                </span>
+                <span class="lb-player-email">
+                  ${u.team1} vs ${u.team2}
+                </span>
+              </div>
+            </div>
+
+            <!-- ✅ View Team button — only if match is live OR it's your own team -->
+            <span class="lb-predictions">
+              ${isMatchLive || isYou
+                ? `<button class="btn-view-lb-team"
+                    onclick="viewTeam('${u.id}', '${u.username}')">
+                    👁️ Team
+                   </button>`
+                : `<span style="color:rgba(255,255,255,0.3);font-size:0.75rem">🔒</span>`
+              }
+            </span>
+
+            <span class="lb-points">${u.totalPts}</span>
+          </div>`
+      })
+
+      list.innerHTML = html
+    }
+
+    // ===== VIEW TEAM =====
+    window.viewTeam = async function(userId, username) {
+      const modal = document.getElementById('view-team-modal')
+      const content = document.getElementById('modal-team-content')
+      const title = document.getElementById('modal-team-title')
+
+      title.textContent = `⭐ ${username}'s Team`
+      content.innerHTML = '<div class="lb-loading">⏳ Loading team...</div>'
+      modal.classList.remove('hidden')
+
+      try {
+        const q = query(collection(db, 'predictions'), where('userId', '==', userId))
+        const snap = await getDocs(q)
+
+        if (snap.empty) {
+          content.innerHTML = '<p style="color:white;text-align:center">No team found!</p>'
+          return
+        }
+
+        const pred = snap.docs[snap.docs.length - 1].data()
+
+        function roleIcon(r) {
+          return r === 'Batsman' ? '🏏' : r === 'Bowler' ? '🤾' :
+                 r === 'All-Rounder' ? '🌟' : '🧤'
+        }
+
+        let html = `
+          <div style="text-align:center;padding:10px;
+            background:rgba(255,255,255,0.06);
+            border-radius:10px;margin-bottom:16px;
+            font-weight:700;color:white">
+            ${pred.team1} vs ${pred.team2}
+          </div>`
+
+        // ✅ Show players with captain/vc multipliers
+        let total = 0
+        if (pred.players) {
+          pred.players.forEach((p, i) => {
+            const isCaptain = pred.captainId === p.id
+            const isVC = pred.vcId === p.id
+            let pts = parseInt(p.points) || 0
+            if (isCaptain) pts = pts * 2
+            else if (isVC) pts = pts * 1.5
+            total += pts
+
+            const roleColor = p.role === 'Batsman' ? '#f9f047' :
+                              p.role === 'Bowler' ? '#38d4c8' :
+                              p.role === 'All-Rounder' ? '#ff9a3c' : '#ff6ec7'
+
+            html += `
+              <div style="display:flex;align-items:center;gap:12px;
+                padding:10px 14px;
+                background:rgba(255,255,255,0.07);
+                border:1px solid rgba(255,255,255,0.1);
+                border-radius:10px;margin-bottom:8px;
+                ${isCaptain ? 'border-left:3px solid #f9f047' :
+                  isVC ? 'border-left:3px solid #38d4c8' :
+                  'border-left:3px solid ' + roleColor}">
+                <span style="font-size:1.3rem">${roleIcon(p.role)}</span>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:0.88rem;color:white">
+                    ${p.name}
+                    ${isCaptain ? '<span style="background:#f9f047;color:#000;font-size:0.65rem;padding:1px 6px;border-radius:8px;margin-left:4px;font-weight:900">C</span>' : ''}
+                    ${isVC ? '<span style="background:#38d4c8;color:#000;font-size:0.65rem;padding:1px 6px;border-radius:8px;margin-left:4px;font-weight:900">VC</span>' : ''}
+                  </div>
+                  <div style="font-size:0.72rem;color:${roleColor}">${p.role}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:0.88rem;font-weight:700;color:#43e97b">
+                    ${pts} pts
+                  </div>
+                  ${isCaptain ? '<div style="font-size:0.65rem;color:#f9f047">(2x)</div>' :
+                    isVC ? '<div style="font-size:0.65rem;color:#38d4c8">(1.5x)</div>' : ''}
+                </div>
+              </div>`
+          })
+        }
+
+        // Impact player
+        if (pred.impactPlayer) {
+          const impPts = parseInt(pred.impactPlayer.points) || 0
+          total += impPts
+          html += `
+            <div style="display:flex;align-items:center;gap:12px;
+              padding:10px 14px;
+              background:rgba(249,240,71,0.08);
+              border:1px solid rgba(249,240,71,0.3);
+              border-radius:10px;margin-bottom:8px">
+              <span style="font-size:1.3rem">${roleIcon(pred.impactPlayer.role)}</span>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:0.88rem;color:white">
+                  ${pred.impactPlayer.name}
+                  <span style="background:#ff6ec7;color:white;font-size:0.65rem;
+                    padding:1px 6px;border-radius:8px;margin-left:4px">⚡</span>
+                </div>
+                <div style="font-size:0.72rem;color:#f9f047">Impact Player</div>
+              </div>
+              <div style="font-size:0.88rem;font-weight:700;color:#43e97b">
+                ${impPts} pts
+              </div>
+            </div>`
+        }
+
+        // Total
+        html += `
+          <div style="display:flex;justify-content:space-between;
+            align-items:center;padding:14px 16px;
+            background:rgba(255,255,255,0.06);
+            border-radius:12px;margin-top:8px;
+            font-weight:700;color:white">
+            <span>🏆 Total Points</span>
+            <span style="font-size:1.4rem;font-weight:800;
+              background:linear-gradient(135deg,#ff6ec7,#f9f047);
+              -webkit-background-clip:text;
+              -webkit-text-fill-color:transparent;
+              background-clip:text">
+              ${total}
+            </span>
+          </div>`
+
+        content.innerHTML = html
+
+      } catch(e) {
+        content.innerHTML = `<p style="color:white;text-align:center">❌ ${e.message}</p>`
+      }
+    }
+
+    // ===== CLOSE MODAL =====
+    window.closeTeamModal = function() {
+      document.getElementById('view-team-modal').classList.add('hidden')
+    }
+
+    // Close on overlay click
+    document.getElementById('view-team-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('view-team-modal')) {
+        closeTeamModal()
+      }
+    })
+
+    // ===== LOGOUT =====
+    window.handleLogout = async function() {
+      await signOut(auth)
+      window.location.href = 'login.html'
+    }
+  </script>
+
+</body>
+</html>

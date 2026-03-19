@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | Create Account</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="login-page">
+
+  <!-- ADMIN BUTTON TOP RIGHT -->
+  <div class="admin-access">
+    <a href="admin.html" class="btn-admin">⚙️ Admin</a>
+  </div>
+
+  <!-- BACKGROUND DECORATION -->
+  <div class="bg-circle bg-circle-1"></div>
+  <div class="bg-circle bg-circle-2"></div>
+
+  <!-- SIGNUP WRAPPER -->
+  <div class="login-wrapper">
+
+    <!-- LOGO -->
+    <div class="login-logo">
+      <span class="logo-icon">🏏</span>
+      <h1 class="logo-text">Predict<span>11</span></h1>
+      <p class="logo-tagline">Your Fantasy Cricket Arena</p>
+    </div>
+
+    <!-- SIGNUP CARD -->
+    <div class="login-card">
+      <h2>Create Account</h2>
+      <p class="card-subtitle">Join the cricket prediction arena!</p>
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🎮</span>
+          <input type="text" id="username" placeholder="Choose a username" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <div class="input-wrapper">
+          <span class="input-icon">📧</span>
+          <input type="email" id="email" placeholder="Enter your email" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" placeholder="Create a password" />
+          <span class="toggle-password" id="toggle-pass">👁️</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm-password">Confirm Password</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="confirm-password" placeholder="Confirm your password" />
+          <span class="toggle-password" id="toggle-confirm">👁️</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="signup-btn">Create Account</button>
+
+      <p id="msg" class="form-msg"></p>
+
+      <div class="form-links center-link">
+        <a href="login.html">← Already have an account? Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+        // Your web app's Firebase configuration
+    const firebaseConfig = {
+    apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+    authDomain: "predict11-fc129.firebaseapp.com",
+    projectId: "predict11-fc129",
+    storageBucket: "predict11-fc129.firebasestorage.app",
+    messagingSenderId: "634146309603",
+    appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    };
+
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    console.log('✅ Firebase loaded on signup!')
+
+    // Toggle passwords
+    document.getElementById('toggle-pass').addEventListener('click', () => {
+      const input = document.getElementById('password')
+      input.type = input.type === 'password' ? 'text' : 'password'
+    })
+
+    document.getElementById('toggle-confirm').addEventListener('click', () => {
+      const input = document.getElementById('confirm-password')
+      input.type = input.type === 'password' ? 'text' : 'password'
+    })
+
+    // Signup button
+    document.getElementById('signup-btn').addEventListener('click', async () => {
+      const username = document.getElementById('username').value.trim()
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value.trim()
+      const confirmPassword = document.getElementById('confirm-password').value.trim()
+      const msg = document.getElementById('msg')
+      const btn = document.getElementById('signup-btn')
+
+      // Validation
+      if (!username || !email || !password || !confirmPassword) {
+        msg.textContent = '❌ Please fill in all fields!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      if (password.length < 6) {
+        msg.textContent = '❌ Password must be at least 6 characters!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      if (password !== confirmPassword) {
+        msg.textContent = '❌ Passwords do not match!'
+        msg.className = 'form-msg error'
+        return
+      }
+
+      btn.textContent = '⏳ Creating account...'
+      btn.disabled = true
+
+      try {
+        // Step 1: Create in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+        const user = userCredential.user
+
+        // Step 2: Save profile in Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          username: username,
+          email: email,
+          totalPoints: 0,
+          createdAt: serverTimestamp()
+        })
+
+        msg.textContent = '✅ Account created! Redirecting to login...'
+        msg.className = 'form-msg success'
+
+        setTimeout(() => {
+          window.location.href = 'login.html'
+        }, 2000)
+
+      } catch (error) {
+        btn.textContent = 'Create Account'
+        btn.disabled = false
+
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            msg.textContent = '❌ Email already registered!'
+            break
+          case 'auth/invalid-email':
+            msg.textContent = '❌ Invalid email address!'
+            break
+          case 'auth/weak-password':
+            msg.textContent = '❌ Password is too weak!'
+            break
+          default:
+            msg.textContent = '❌ ' + error.message
+        }
+        msg.className = 'form-msg error'
+        console.error('Signup error:', error)
+      }
+    })
+  </script>
+
+</body>
+</html>
