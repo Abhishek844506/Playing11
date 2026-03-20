@@ -29,8 +29,14 @@
 
   <main class="dashboard-main">
 
+    <!-- PAGE HEADER -->
     <div class="page-header">
       <h1>🏆 Leaderboard</h1>
+    </div>
+
+    <!-- MATCH SELECTOR -->
+    <div class="lb-match-selector" id="lb-match-selector">
+      <div class="lb-loading">⏳ Loading matches...</div>
     </div>
 
     <!-- MATCH STATUS BANNER -->
@@ -71,10 +77,12 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
     import { getAuth, onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
-    import { getFirestore, collection, getDocs, doc, getDoc, query, where }
+    import { getFirestore, collection, getDocs, doc,
+      getDoc, query, where }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
 
     const firebaseConfig = {
@@ -89,9 +97,13 @@
     const app = initializeApp(firebaseConfig)
     const auth = getAuth(app)
     const db = getFirestore(app)
+
     let currentUser = null
     let isMatchLive = false
+    let selectedMatchId = null
+    let allMatches = []
 
+    // ===== AUTH =====
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'login.html'; return }
       currentUser = user
@@ -102,109 +114,201 @@
             '👤 ' + (userDoc.data().username || user.email.split('@')[0])
         }
       } catch(e) {}
-      await loadMatchStatus()
-      loadLeaderboard()
+
+      // ✅ Check URL for matchId param
+      const params = new URLSearchParams(window.location.search)
+      const matchIdFromUrl = params.get('matchId')
+
+      await loadMatches(matchIdFromUrl)
     })
 
-    async function loadMatchStatus() {
+    // ===== LOAD ALL MATCHES =====
+    async function loadMatches(preselectedMatchId) {
       try {
         const snap = await getDocs(collection(db, 'matches'))
-        snap.forEach(d => {
-          if (d.data().status === 'live') isMatchLive = true
+        allMatches = []
+        snap.forEach(d => allMatches.push({ id: d.id, ...d.data() }))
+
+        // Sort: live first, then upcoming, then completed
+        allMatches.sort((a, b) => {
+          const order = { live: 0, upcoming: 1, completed: 2 }
+          return (order[a.status] || 3) - (order[b.status] || 3)
         })
 
-        const info = document.getElementById('match-status-info')
-        if (isMatchLive) {
-          info.innerHTML = `
-            <div class="lb-status-banner lb-status-live">
-              <span>🔴 Match is LIVE!</span>
-              <span>You can now view opponents teams</span>
-            </div>`
-        } else {
-          info.innerHTML = `
-            <div class="lb-status-banner lb-status-upcoming">
-              <span>⏳ Match not live yet</span>
-              <span>Opponent teams hidden until match goes live</span>
-            </div>`
+        renderMatchSelector(allMatches)
+
+        // Select match from URL or default to first
+        if (preselectedMatchId) {
+          selectMatch(preselectedMatchId)
+        } else if (allMatches.length > 0) {
+          selectMatch(allMatches[0].id)
         }
+
       } catch(e) { console.error(e) }
     }
 
-    function calculateTotal(players, captainId, vcId, impactPlayer) {
-      let total = 0
-      if (players) {
-        players.forEach(p => {
-          let pts = parseInt(p.points) || 0
-          if (p.id === captainId) pts = pts * 2
-          else if (p.id === vcId) pts = pts * 1.5
-          total += pts
-        })
+    // ===== RENDER MATCH SELECTOR =====
+    function renderMatchSelector(matches) {
+      const container = document.getElementById('lb-match-selector')
+
+      if (matches.length === 0) {
+        container.innerHTML =
+          '<div class="lb-loading">No matches yet!</div>'
+        return
       }
-      if (impactPlayer) total += parseInt(impactPlayer.points) || 0
-      return total
+
+      let html = '<div class="lb-match-tabs">'
+      matches.forEach(m => {
+        const statusIcon = m.status === 'live' ? '🔴' :
+                           m.status === 'upcoming' ? '⏳' : '✅'
+        const statusClass = m.status === 'live' ? 'lbm-live' :
+                            m.status === 'upcoming' ? 'lbm-upcoming' :
+                            'lbm-completed'
+        html += `
+          <button class="lb-match-tab ${statusClass}"
+            id="tab-${m.id}"
+            onclick="selectMatch('${m.id}')">
+            <span class="lbm-icon">${statusIcon}</span>
+            <span class="lbm-teams">
+              ${m.team1Flag || '🏏'}   vs    ${m.team2Flag || '🏏'}
+            </span>
+            <span class="lbm-name">
+              ${m.team1Name}   vs   ${m.team2Name}
+            </span>
+          </button>`
+      })
+      html += '</div>'
+      container.innerHTML = html
     }
 
-    async function loadLeaderboard() {
+    // ===== SELECT MATCH =====
+    window.selectMatch = function(matchId) {
+      selectedMatchId = matchId
+
+      // Update active tab
+      document.querySelectorAll('.lb-match-tab').forEach(t => {
+        t.classList.remove('lb-match-tab-active')
+      })
+      const activeTab = document.getElementById(`tab-${matchId}`)
+      if (activeTab) activeTab.classList.add('lb-match-tab-active')
+
+      // Find match
+      const match = allMatches.find(m => m.id === matchId)
+      if (!match) return
+
+      // Update subtitle
+      document.getElementById('lb-subtitle').textContent =
+        `${match.team1Name} vs ${match.team2Name} • ${match.matchType || 'T20'}`
+
+      // Update match live status
+      isMatchLive = match.status === 'live'
+
+
+      // Load leaderboard for this match
+      loadLeaderboard(matchId, match.status)
+    }
+
+    // ===== LOAD LEADERBOARD FOR SPECIFIC MATCH =====
+    async function loadLeaderboard(matchId, matchStatus) {
+      // Show loading
+      document.getElementById('podium-section').innerHTML =
+        '<div class="lb-loading">⏳ Loading...</div>'
+      document.getElementById('leaderboard-list').innerHTML =
+        '<div class="lb-loading">⏳ Loading...</div>'
+      document.getElementById('your-rank-card').innerHTML = ''
+
       try {
-        const predsSnap = await getDocs(collection(db, 'predictions'))
-        const predsByUser = {}
+        // ✅ Fetch predictions for THIS match only
+        const predsSnap = await getDocs(
+          query(collection(db, 'predictions'),
+            where('matchId', '==', matchId))
+        )
 
-        predsSnap.forEach(d => {
-          const p = d.data()
-          if (!p.userId) return
-          const correctTotal = calculateTotal(p.players, p.captainId, p.vcId, p.impactPlayer)
-          predsByUser[p.userId] = {
-            predId: d.id,
-            totalPts: correctTotal,
-            team1: p.team1,
-            team2: p.team2,
-            players: p.players,
-            captainId: p.captainId,
-            vcId: p.vcId,
-            impactPlayer: p.impactPlayer,
-            userEmail: p.userEmail
-          }
-        })
-
-        if (Object.keys(predsByUser).length === 0) {
-          document.getElementById('leaderboard-list').innerHTML =
-            '<div class="lb-loading">No predictions yet!</div>'
+        if (predsSnap.empty) {
           document.getElementById('podium-section').innerHTML =
-            '<div class="lb-loading">No players yet!</div>'
+            '<div class="lb-loading">No predictions for this match yet!</div>'
+          document.getElementById('leaderboard-list').innerHTML =
+            '<div class="lb-loading">Be the first to predict! 🎯</div>'
           return
         }
 
+        // ✅ Fetch ALL fresh player points
+        const playersSnap = await getDocs(collection(db, 'players'))
+        const freshPoints = {}
+        playersSnap.forEach(d => {
+          freshPoints[d.id] = parseInt(d.data().points) || 0
+        })
+
+        // ✅ Calculate totals with fresh points
         const ranked = []
-        for (const uid of Object.keys(predsByUser)) {
+        for (const d of predsSnap.docs) {
+          const p = d.data()
+          if (!p.userId) continue
+
+          let total = 0
+
+          if (p.players) {
+            p.players.forEach(pl => {
+              let pts = freshPoints[pl.id] !== undefined
+                ? freshPoints[pl.id]
+                : parseInt(pl.points) || 0
+              if (pl.id === p.captainId) pts = pts * 2
+              else if (pl.id === p.vcId) pts = pts * 1.5
+              total += pts
+            })
+          }
+
+          if (p.impactPlayer && p.impactPlayer.id) {
+            total += freshPoints[p.impactPlayer.id] !== undefined
+              ? freshPoints[p.impactPlayer.id]
+              : parseInt(p.impactPlayer.points) || 0
+          }
+
+          // Get username
           try {
-            const userDoc = await getDoc(doc(db, 'users', uid))
+            const userDoc = await getDoc(doc(db, 'users', p.userId))
             const userData = userDoc.exists() ? userDoc.data() : {}
             ranked.push({
-              id: uid,
-              username: userData.username || predsByUser[uid].userEmail?.split('@')[0] || 'Player',
-              ...predsByUser[uid]
+              id: p.userId,
+              username: userData.username ||
+                p.userEmail?.split('@')[0] || 'Player',
+              totalPts: total,
+              players: p.players,
+              captainId: p.captainId,
+              vcId: p.vcId,
+              impactPlayer: p.impactPlayer,
+              team1: p.team1,
+              team2: p.team2
             })
           } catch(e) {
             ranked.push({
-              id: uid,
-              username: predsByUser[uid].userEmail?.split('@')[0] || 'Player',
-              ...predsByUser[uid]
+              id: p.userId,
+              username: p.userEmail?.split('@')[0] || 'Player',
+              totalPts: total,
+              players: p.players,
+              captainId: p.captainId,
+              vcId: p.vcId,
+              impactPlayer: p.impactPlayer,
+              team1: p.team1,
+              team2: p.team2
             })
           }
         }
 
         ranked.sort((a, b) => b.totalPts - a.totalPts)
+
         renderPodium(ranked)
         renderYourRank(ranked)
-        renderTable(ranked)
+        renderTable(ranked, matchStatus)
 
       } catch(e) {
         console.error(e)
         document.getElementById('leaderboard-list').innerHTML =
-          `<div class="lb-loading">❌ Error: ${e.message}</div>`
+          `<div class="lb-loading">❌ ${e.message}</div>`
       }
     }
 
+    // ===== RENDER PODIUM =====
     function renderPodium(ranked) {
       const section = document.getElementById('podium-section')
       if (ranked.length === 0) {
@@ -230,24 +334,29 @@
         const isFirst = i === 0
 
         html += `
-          <div class="lb-podium-player ${isFirst ? 'lb-podium-first' : ''} ${isYou ? 'lb-podium-you' : ''}">
+          <div class="lb-podium-player
+            ${isFirst ? 'lb-podium-first' : ''}
+            ${isYou ? 'lb-podium-you' : ''}">
             <div class="lb-podium-medal">${medals[i]}</div>
-            <div class="lb-podium-avatar ${isFirst ? 'lb-podium-avatar-gold' : ''}">
+            <div class="lb-podium-avatar
+              ${isFirst ? 'lb-podium-avatar-gold' : ''}">
               ${u.username[0].toUpperCase()}
             </div>
             <div class="lb-podium-name">
-              ${u.username}
-              ${isFirst ? ' 👑' : ''}
+              ${u.username}${isFirst ? ' 👑' : ''}
             </div>
             ${isYou ? '<div class="lb-podium-you-tag">👈 You</div>' : ''}
             <div class="lb-podium-pts">${u.totalPts} pts</div>
-            <div class="lb-podium-stand" style="height:${heights[i]};background:${colors[i]}"></div>
+            <div class="lb-podium-stand"
+              style="height:${heights[i]};background:${colors[i]}">
+            </div>
           </div>`
       })
       html += '</div>'
       section.innerHTML = html
     }
 
+    // ===== RENDER YOUR RANK =====
     function renderYourRank(ranked) {
       const card = document.getElementById('your-rank-card')
       const idx = ranked.findIndex(u => u.id === currentUser.uid)
@@ -255,8 +364,9 @@
       if (idx === -1) {
         card.innerHTML = `
           <div class="lb-your-rank-box">
-            <p style="color:rgba(255,255,255,0.6);font-size:0.88rem;text-align:center">
-              🎯 Make a prediction to appear on leaderboard!
+            <p style="color:rgba(255,255,255,0.7);
+              font-size:0.88rem;text-align:center;width:100%">
+              🎯 You haven't predicted this match yet!
             </p>
           </div>`
         return
@@ -264,7 +374,9 @@
 
       const you = ranked[idx]
       const rank = idx + 1
-      const rankEmoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`
+      const rankEmoji = rank === 1 ? '🥇' :
+                        rank === 2 ? '🥈' :
+                        rank === 3 ? '🥉' : `#${rank}`
 
       card.innerHTML = `
         <div class="lb-your-rank-box">
@@ -281,13 +393,16 @@
           </div>
           <div class="lb-your-rank-right">
             <span class="lb-your-rank-pts">${you.totalPts}</span>
-            <span class="lb-your-rank-sub">Total Points</span>
+            <span class="lb-your-rank-sub">Points</span>
           </div>
         </div>`
     }
 
-    function renderTable(ranked) {
+    // ===== RENDER TABLE =====
+    function renderTable(ranked, matchStatus) {
       const list = document.getElementById('leaderboard-list')
+      const canViewTeams = matchStatus === 'live' || matchStatus === 'completed'
+
       if (ranked.length === 0) {
         list.innerHTML = '<div class="lb-loading">No players yet!</div>'
         return
@@ -298,7 +413,9 @@
         const rank = i + 1
         const isYou = u.id === currentUser.uid
         const isFirst = rank === 1
-        const rankDisplay = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`
+        const rankDisplay = rank === 1 ? '🥇' :
+                            rank === 2 ? '🥈' :
+                            rank === 3 ? '🥉' : `#${rank}`
 
         html += `
           <div class="lb-table-row
@@ -308,25 +425,32 @@
             <span class="lb-table-rank">${rankDisplay}</span>
 
             <div class="lb-table-player">
-              <div class="lb-table-avatar ${isFirst ? 'lb-avatar-gold' : ''}">
+              <div class="lb-table-avatar
+                ${isFirst ? 'lb-avatar-gold' : ''}">
                 ${u.username[0].toUpperCase()}
               </div>
               <div class="lb-table-info">
                 <span class="lb-table-name">
                   ${u.username}
-                  ${isFirst ? '<span class="lb-winner-tag">👑 Winner</span>' : ''}
-                  ${isYou ? '<span class="lb-you-tag">👈 You</span>' : ''}
+                  ${isFirst
+                    ? '<span class="lb-winner-tag">👑 Winner</span>'
+                    : ''}
+                  ${isYou
+                    ? '<span class="lb-you-tag">👈 You</span>'
+                    : ''}
                 </span>
               </div>
             </div>
 
             <span class="lb-table-team">
-              ${isMatchLive || isYou
+              ${canViewTeams || isYou
                 ? `<button class="btn-view-lb-team"
-                    onclick="viewTeam('${u.id}', '${u.username}')">
+                    onclick="viewTeam('${u.id}','${u.username}',
+                    '${u.captainId}','${u.vcId}')">
                     👁️ Team
                    </button>`
-                : `<span style="color:rgba(255,255,255,0.3);font-size:0.8rem">🔒</span>`
+                : `<span style="color:rgba(255,255,255,0.3);
+                    font-size:0.8rem">🔒</span>`
               }
             </span>
 
@@ -337,7 +461,8 @@
       list.innerHTML = html
     }
 
-    window.viewTeam = async function(userId, username) {
+    // ===== VIEW TEAM MODAL =====
+    window.viewTeam = async function(userId, username, captainId, vcId) {
       const modal = document.getElementById('view-team-modal')
       const content = document.getElementById('modal-team-content')
       const title = document.getElementById('modal-team-title')
@@ -347,18 +472,24 @@
       modal.classList.remove('hidden')
 
       try {
-        const q = query(collection(db, 'predictions'), where('userId', '==', userId))
+        const q = query(
+          collection(db, 'predictions'),
+          where('userId', '==', userId),
+          where('matchId', '==', selectedMatchId)
+        )
         const snap = await getDocs(q)
 
         if (snap.empty) {
-          content.innerHTML = '<p style="color:white;text-align:center;padding:20px">No team found!</p>'
+          content.innerHTML =
+            '<p style="color:white;text-align:center;padding:20px">No team found!</p>'
           return
         }
 
-        const pred = snap.docs[snap.docs.length - 1].data()
+        const pred = snap.docs[0].data()
 
         function roleIcon(r) {
-          return r === 'Batsman' ? '🏏' : r === 'Bowler' ? '🤾' :
+          return r === 'Batsman' ? '🏏' :
+                 r === 'Bowler' ? '🤾' :
                  r === 'All-Rounder' ? '🌟' : '🧤'
         }
 
@@ -371,11 +502,17 @@
           </div>`
 
         let total = 0
+
         if (pred.players) {
-          pred.players.forEach(p => {
+          for (const p of pred.players) {
             const isCaptain = pred.captainId === p.id
             const isVC = pred.vcId === p.id
-            let pts = parseInt(p.points) || 0
+
+            const playerDoc = await getDoc(doc(db, 'players', p.id))
+            let pts = playerDoc.exists()
+              ? parseInt(playerDoc.data().points) || 0
+              : parseInt(p.points) || 0
+
             if (isCaptain) pts = pts * 2
             else if (isVC) pts = pts * 1.5
             total += pts
@@ -406,12 +543,16 @@
                     isVC ? '<div style="font-size:0.62rem;color:#38d4c8">(1.5x)</div>' : ''}
                 </div>
               </div>`
-          })
+          }
         }
 
-        if (pred.impactPlayer) {
-          const impPts = parseInt(pred.impactPlayer.points) || 0
+        if (pred.impactPlayer && pred.impactPlayer.id) {
+          const impDoc = await getDoc(doc(db, 'players', pred.impactPlayer.id))
+          const impPts = impDoc.exists()
+            ? parseInt(impDoc.data().points) || 0
+            : parseInt(pred.impactPlayer.points) || 0
           total += impPts
+
           html += `
             <div style="display:flex;align-items:center;gap:12px;
               padding:10px 14px;
@@ -422,8 +563,7 @@
               <div style="flex:1">
                 <div style="font-weight:700;font-size:0.88rem;color:white">
                   ${pred.impactPlayer.name}
-                  <span style="background:#ff6ec7;color:white;font-size:0.6rem;
-                    padding:1px 6px;border-radius:6px;margin-left:4px">⚡ Impact</span>
+                  <span style="background:#ff6ec7;color:white;font-size:0.6rem;padding:1px 6px;border-radius:6px;margin-left:4px">⚡ Impact</span>
                 </div>
                 <div style="font-size:0.7rem;color:#f9f047">${pred.impactPlayer.role}</div>
               </div>
@@ -432,8 +572,8 @@
         }
 
         html += `
-          <div style="display:flex;justify-content:space-between;align-items:center;
-            padding:14px 16px;
+          <div style="display:flex;justify-content:space-between;
+            align-items:center;padding:14px 16px;
             background:rgba(255,255,255,0.08);
             border-radius:12px;margin-top:8px;
             font-weight:700;color:white;font-size:0.95rem">
@@ -442,15 +582,14 @@
               background:linear-gradient(135deg,#ff6ec7,#f9f047);
               -webkit-background-clip:text;
               -webkit-text-fill-color:transparent;
-              background-clip:text">
-              ${total}
-            </span>
+              background-clip:text">${total}</span>
           </div>`
 
         content.innerHTML = html
 
       } catch(e) {
-        content.innerHTML = `<p style="color:white;text-align:center;padding:20px">❌ ${e.message}</p>`
+        content.innerHTML =
+          `<p style="color:white;text-align:center;padding:20px">❌ ${e.message}</p>`
       }
     }
 
