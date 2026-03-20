@@ -527,9 +527,8 @@ body::before {
 .section-title h2 { font-size: 1.1rem; font-weight: 600; }
 
 /* ===== PAGE HEADER ===== */
-.page-header { text-align: center; margin-bottom: 32px; }
-.page-header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
-.page-header p { color: var(--text-muted); font-size: 0.9rem; }
+.page-header { text-align: center; margin-bottom: 32px; background: var(--gradient); backdrop-filter: blur(20px); border-radius: 14px ; padding: 15px; }
+.page-header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; color: white}
 
 /* ===== MATCH CARDS ===== */
 .match-card-wrapper { margin-bottom: 32px; }
@@ -1961,6 +1960,7 @@ body::before {
   margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 8px;
+  background: solid blue;
 }
 
 .lb-status-live {
@@ -2254,4 +2254,53 @@ body::before {
   .lb-your-rank-pts { font-size: 1.6rem; }
   .lb-podium-avatar { width: 46px; height: 46px; font-size: 1.2rem; }
   .lb-podium-avatar-gold { width: 58px !important; height: 58px !important; }
+}
+
+/* ===== LEADERBOARD VISIBILITY FIX ===== */
+.lb-status-banner {
+  background: rgba(13,18,153,0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 14px !important;
+  padding: 14px 20px !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+
+.lb-status-live {
+  border: 1.5px solid rgba(255,80,80,0.6) !important;
+}
+
+.lb-status-live span:first-child {
+  font-weight: 700 !important;
+  color: #ff5050 !important;
+  font-size: 0.92rem !important;
+}
+
+.lb-status-upcoming {
+  border: 1.5px solid rgba(249,240,71,0.5) !important;
+}
+
+.lb-status-upcoming span:first-child {
+  font-weight: 700 !important;
+  color: #f9f047 !important;
+  font-size: 0.92rem !important;
+}
+
+.lb-status-banner span:last-child {
+  font-size: 0.78rem !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+
+/* ===== PAGE HEADER VISIBILITY ===== */
+.dashboard-main .page-header h1 {
+  color: white !important;
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+  backdrop-filter: blur(20px) !important;
 }
