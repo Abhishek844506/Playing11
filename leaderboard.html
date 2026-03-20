@@ -32,6 +32,7 @@
     <!-- PAGE HEADER -->
     <div class="page-header">
       <h1>🏆 Leaderboard</h1>
+      <p id="lb-subtitle">Top fantasy cricket predictors</p>
     </div>
 
     <!-- MATCH SELECTOR -->
@@ -170,10 +171,10 @@
             onclick="selectMatch('${m.id}')">
             <span class="lbm-icon">${statusIcon}</span>
             <span class="lbm-teams">
-              ${m.team1Flag || '🏏'}   vs    ${m.team2Flag || '🏏'}
+              ${m.team1Flag || '🏏'} vs ${m.team2Flag || '🏏'}
             </span>
             <span class="lbm-name">
-              ${m.team1Name}   vs   ${m.team2Name}
+              ${m.team1Name} vs ${m.team2Name}
             </span>
           </button>`
       })
@@ -202,8 +203,6 @@
 
       // Update match live status
       isMatchLive = match.status === 'live'
-
-
       // Load leaderboard for this match
       loadLeaderboard(matchId, match.status)
     }
