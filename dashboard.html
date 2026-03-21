@@ -13,7 +13,7 @@
     <div class="nav-logo">🏏 Playing<span>11</span></div>
     <ul class="nav-links">
       <li><a href="dashboard.html" class="active">🏠 Home</a></li>
-      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+      <li><a href="leaderboard.html" id="lb-nav-link">🏆 Leaderboard</a></li>
     </ul>
     <div class="nav-right">
       <span class="nav-username" id="nav-username">👤 Player</span>
@@ -23,13 +23,12 @@
 
   <nav class="bottom-nav">
     <a href="dashboard.html" class="active">🏠<span>Home</span></a>
-    <a href="leaderboard.html">🏆<span>Board</span></a>
+    <a href="leaderboard.html" id="lb-bottom-link">🏆<span>Board</span></a>
     <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
   </nav>
 
   <main class="dashboard-main">
 
-    <!-- WELCOME BANNER -->
     <section class="welcome-banner">
       <div class="welcome-text">
         <h1>Welcome back, <span id="user-fullname">Player</span>! 👋</h1>
@@ -41,7 +40,6 @@
       </div>
     </section>
 
-    <!-- STATS -->
     <section class="stats-grid">
       <div class="stat-card">
         <span class="stat-icon">🎯</span>
@@ -73,7 +71,6 @@
       </div>
     </section>
 
-    <!-- LIVE MATCH -->
     <section class="section-title">
       <h2>🔴 Live Match</h2>
     </section>
@@ -83,7 +80,6 @@
       </div>
     </section>
 
-    <!-- UPCOMING MATCHES -->
     <section class="section-title" style="margin-top:28px">
       <h2>⏳ Upcoming Matches</h2>
     </section>
@@ -91,7 +87,6 @@
       <div class="lb-loading">⏳ Loading...</div>
     </section>
 
-    <!-- COMPLETED MATCHES -->
     <section class="section-title" style="margin-top:28px">
       <h2>✅ Completed Matches</h2>
     </section>
@@ -105,8 +100,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
     import { getAuth, onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
-    import { getFirestore, doc, getDoc, collection, query,
-      where, onSnapshot, getDocs }
+    import { getFirestore, doc, getDoc, collection,
+      query, where, onSnapshot, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
 
     const firebaseConfig = {
@@ -121,12 +116,14 @@
     const app = initializeApp(firebaseConfig)
     const auth = getAuth(app)
     const db = getFirestore(app)
+    let currentUid = null
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'login.html'; return }
+      currentUid = user.uid
       await loadUserProfile(user.uid)
-      loadPredictions(user.uid)
-      loadAllMatches(user.uid)
+      // ✅ Load predictions FIRST then render matches
+      loadDashboard(user.uid)
     })
 
     async function loadUserProfile(uid) {
@@ -144,30 +141,73 @@
       } catch(e) { console.error(e) }
     }
 
-    async function loadAllMatches(uid) {
+    // ===== MAIN DASHBOARD LOADER =====
+    async function loadDashboard(uid) {
       try {
-        const snap = await getDocs(collection(db, 'matches'))
-        const matches = []
-        snap.forEach(d => matches.push({ id: d.id, ...d.data() }))
+        // ✅ Load matches and predictions TOGETHER
+        const [matchSnap, predSnap] = await Promise.all([
+          getDocs(collection(db, 'matches')),
+          getDocs(query(collection(db, 'predictions'),
+            where('userId', '==', uid)))
+        ])
 
+        const matches = []
+        matchSnap.forEach(d => matches.push({ id: d.id, ...d.data() }))
+
+        // ✅ Build map: matchId → predictionId
+        const userPredictions = {}
+        predSnap.forEach(d => {
+          const p = d.data()
+          if (p.matchId) {
+            // Keep latest prediction per match
+            if (!userPredictions[p.matchId]) {
+              userPredictions[p.matchId] = d.id
+            } else {
+              const existing = predSnap.docs.find(
+                doc => doc.id === userPredictions[p.matchId]
+              )
+              if (existing) {
+                const existTime = existing.data().createdAt?.seconds || 0
+                const newTime = p.createdAt?.seconds || 0
+                if (newTime > existTime) {
+                  userPredictions[p.matchId] = d.id
+                }
+              }
+            }
+          }
+        })
+
+        // Stats
+        const total = predSnap.size
+        let correct = 0
+        predSnap.forEach(d => {
+          if (d.data().isCorrect === true) correct++
+        })
+        document.getElementById('total-predictions').textContent = total
+        document.getElementById('correct-predictions').textContent = correct
+        document.getElementById('win-rate').textContent =
+          total > 0 ? Math.round((correct / total) * 100) + '%' : '0%'
+
+        // Split matches by status
         const liveMatches = matches.filter(m => m.status === 'live')
         const upcomingMatches = matches.filter(m => m.status === 'upcoming')
         const completedMatches = matches.filter(m => m.status === 'completed')
 
-        const predSnap = await getDocs(
-          query(collection(db, 'predictions'), where('userId', '==', uid))
-        )
-        const userPredictions = {}
-        predSnap.forEach(d => {
-          const p = d.data()
-          userPredictions[p.matchId] = d.id
-        })
+        // Set leaderboard nav link
+        const liveOrCompleted = liveMatches[0] ||
+          completedMatches[completedMatches.length - 1]
+        if (liveOrCompleted) {
+          document.getElementById('lb-nav-link').href =
+            `leaderboard.html?matchId=${liveOrCompleted.id}`
+          document.getElementById('lb-bottom-link').href =
+            `leaderboard.html?matchId=${liveOrCompleted.id}`
+        }
 
         renderLiveMatch(liveMatches[0] || null, userPredictions)
         renderUpcomingMatches(upcomingMatches, userPredictions)
         renderCompletedMatches(completedMatches, userPredictions)
 
-      } catch(e) { console.error(e) }
+      } catch(e) { console.error('Dashboard error:', e) }
     }
 
     function formatDate(dateStr) {
@@ -193,18 +233,14 @@
         return
       }
 
-      const hasPredicted = userPredictions[match.id]
+      const hasPredicted = !!userPredictions[match.id]
 
       container.innerHTML = `
         <div class="dash-match-card dash-match-live">
-
           <div class="dash-match-status-row">
-            <span class="dash-status-badge dash-status-live">
-              🔴 LIVE
-            </span>
+            <span class="dash-status-badge dash-status-live">🔴 LIVE</span>
             <span class="dash-match-type">${match.matchType || 'T20'}</span>
           </div>
-
           <div class="dash-match-teams-row">
             <div class="dash-team">
               <span class="dash-team-flag">${match.team1Flag || '🏏'}</span>
@@ -218,27 +254,27 @@
               <span class="dash-team-name">${match.team2Name}</span>
             </div>
           </div>
-
           <div class="dash-match-info-row">
             <span>📅 ${formatDate(match.date)}</span>
             <span>🏟️ ${match.venue || 'TBA'}</span>
           </div>
-
           <div class="dash-match-action">
             ${hasPredicted
               ? `<div class="dash-action-col">
                   <div class="dash-submitted-badge">✅ Team Submitted!</div>
                   <div class="dash-action-row" style="margin-top:8px">
                     <a href="leaderboard.html?matchId=${match.id}"
-                      class="dash-lb-btn" style="flex:1;text-align:center">
+                      class="dash-lb-btn"
+                      style="flex:1;text-align:center;text-decoration:none">
                       🏆 Leaderboard
                     </a>
-                    <a href="my-team.html" class="dash-your-team-btn">
+                    <a href="my-team.html?matchId=${match.id}"
+                      class="dash-your-team-btn">
                       👁️ Your Team
                     </a>
                   </div>
-                </div>`
-              : `<a href="predict.html" class="btn-primary"
+                 </div>`
+              : `<a href="predict.html?matchId=${match.id}" class="btn-primary"
                   style="display:block;text-decoration:none;text-align:center">
                   🎯 Make Prediction →
                 </a>`
@@ -253,26 +289,29 @@
 
       if (matches.length === 0) {
         container.innerHTML = `
-          <div class="dash-empty-state">
-            <span>📅</span>
-            <p>No upcoming matches scheduled</p>
+          <div class="dash-match-card">
+            <div class="no-match-state">
+              <span>📅</span>
+              <p>No upcoming matches scheduled</p>
+              <span class="no-match-sub">Check back later!</span>
+            </div>
           </div>`
         return
       }
 
       let html = '<div class="dash-matches-grid">'
       matches.forEach(match => {
-        const hasPredicted = userPredictions[match.id]
+        // ✅ Check if user predicted THIS specific match
+        const hasPredicted = !!userPredictions[match.id]
+
         html += `
           <div class="dash-match-card dash-match-upcoming">
-
             <div class="dash-match-status-row">
               <span class="dash-status-badge dash-status-upcoming">
                 ⏳ Upcoming
               </span>
               <span class="dash-match-type">${match.matchType || 'T20'}</span>
             </div>
-
             <div class="dash-match-teams-row">
               <div class="dash-team">
                 <span class="dash-team-flag">${match.team1Flag || '🏏'}</span>
@@ -286,28 +325,30 @@
                 <span class="dash-team-name">${match.team2Name}</span>
               </div>
             </div>
-
             <div class="dash-match-info-row">
               <span>📅 ${formatDate(match.date)}</span>
               <span>🏟️ ${match.venue || 'TBA'}</span>
             </div>
-
             <div class="dash-match-action">
               ${hasPredicted
                 ? `<div class="dash-action-col">
                     <div class="dash-submitted-badge">✅ Team Submitted!</div>
                     <div class="dash-action-row" style="margin-top:8px">
                       <a href="leaderboard.html?matchId=${match.id}"
-                        class="dash-lb-btn" style="flex:1;text-align:center">
+                        class="dash-lb-btn"
+                        style="flex:1;text-align:center;text-decoration:none">
                         🏆 Leaderboard
                       </a>
-                      <a href="my-team.html" class="dash-your-team-btn">
+                      <a href="my-team.html?matchId=${match.id}"
+                        class="dash-your-team-btn">
                         👁️ Your Team
                       </a>
                     </div>
-                  </div>`
-                : `<a href="predict.html" class="btn-primary"
-                    style="display:block;text-decoration:none;text-align:center">
+                   </div>`
+                : `<a href="predict.html?matchId=${match.id}"
+                    class="btn-primary"
+                    style="display:block;text-decoration:none;
+                    text-align:center">
                     🎯 Predict Now →
                   </a>`
               }
@@ -324,26 +365,30 @@
 
       if (matches.length === 0) {
         container.innerHTML = `
-          <div class="dash-empty-state">
-            <span>🏁</span>
-            <p>No completed matches yet</p>
+          <div class="dash-match-card">
+            <div class="no-match-state">
+              <span>🏁</span>
+              <p>No completed matches yet</p>
+              <span class="no-match-sub">
+                Matches will appear here after completion!
+              </span>
+            </div>
           </div>`
         return
       }
 
       let html = '<div class="dash-matches-grid">'
       matches.forEach(match => {
-        const hasPredicted = userPredictions[match.id]
+        const hasPredicted = !!userPredictions[match.id]
+
         html += `
           <div class="dash-match-card dash-match-completed">
-
             <div class="dash-match-status-row">
               <span class="dash-status-badge dash-status-completed">
                 ✅ Completed
               </span>
               <span class="dash-match-type">${match.matchType || 'T20'}</span>
             </div>
-
             <div class="dash-match-teams-row">
               <div class="dash-team">
                 <span class="dash-team-flag">${match.team1Flag || '🏏'}</span>
@@ -357,27 +402,30 @@
                 <span class="dash-team-name">${match.team2Name}</span>
               </div>
             </div>
-
             <div class="dash-match-info-row">
               <span>📅 ${formatDate(match.date)}</span>
               <span>🏟️ ${match.venue || 'TBA'}</span>
             </div>
-
             <div class="dash-match-action">
-              ${hasPredicted
-                ? `<div class="dash-action-row">
-                    <a href="leaderboard.html?matchId=${match.id}"
-                      class="dash-lb-btn" style="flex:1;text-align:center">
-                      🏆 Leaderboard
-                    </a>
-                    <a href="my-team.html" class="dash-your-team-btn">
+              <div class="dash-action-row">
+                <a href="leaderboard.html?matchId=${match.id}"
+                  class="dash-lb-btn"
+                  style="flex:1;text-align:center;text-decoration:none">
+                  🏆 Leaderboard
+                </a>
+                ${hasPredicted
+                  ? `<a href="my-team.html?matchId=${match.id}"
+                      class="dash-your-team-btn">
                       👁️ My Team
-                    </a>
-                  </div>`
-                : `<div class="dash-no-pred">
-                    😔 You didn't predict this match
-                  </div>`
-              }
+                     </a>`
+                  : `<span style="font-size:0.72rem;
+                      color:rgba(255,255,255,0.35);
+                      padding:10px 8px;text-align:center;
+                      flex-shrink:0">
+                      😔 Not predicted
+                     </span>`
+                }
+              </div>
             </div>
           </div>`
       })
@@ -385,25 +433,23 @@
       container.innerHTML = html
     }
 
-    // ===== LOAD PREDICTIONS (stats) =====
+    // ===== STATS LIVE LISTENER =====
     function loadPredictions(uid) {
-      try {
-        const q = query(
-          collection(db, 'predictions'),
-          where('userId', '==', uid)
-        )
-        onSnapshot(q, (snapshot) => {
-          const total = snapshot.size
-          let correct = 0
-          document.getElementById('total-predictions').textContent = total
-          snapshot.forEach(d => {
-            if (d.data().isCorrect === true) correct++
-          })
-          document.getElementById('correct-predictions').textContent = correct
-          const winRate = total > 0 ? Math.round((correct / total) * 100) : 0
-          document.getElementById('win-rate').textContent = winRate + '%'
+      const q = query(
+        collection(db, 'predictions'),
+        where('userId', '==', uid)
+      )
+      onSnapshot(q, (snapshot) => {
+        const total = snapshot.size
+        let correct = 0
+        snapshot.forEach(d => {
+          if (d.data().isCorrect === true) correct++
         })
-      } catch(e) { console.error(e) }
+        document.getElementById('total-predictions').textContent = total
+        document.getElementById('correct-predictions').textContent = correct
+        document.getElementById('win-rate').textContent =
+          total > 0 ? Math.round((correct / total) * 100) + '%' : '0%'
+      })
     }
 
     window.handleLogout = async function() {

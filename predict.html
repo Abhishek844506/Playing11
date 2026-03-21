@@ -296,16 +296,28 @@
 
     // ===== LOAD LIVE MATCH =====
     async function loadLiveMatch() {
+      // ✅ Check URL for specific matchId first
+      const params = new URLSearchParams(window.location.search)
+      const matchIdFromUrl = params.get('matchId')
+
       const snap = await getDocs(collection(db, 'matches'))
-      let upcoming = null
+      const allMatches = []
+      snap.forEach(d => allMatches.push({ id: d.id, ...d.data() }))
 
-      snap.forEach(d => {
-        const m = d.data()
-        if (m.status === 'live') liveMatch = { id: d.id, ...m }
-        if (m.status === 'upcoming' && !upcoming) upcoming = { id: d.id, ...m }
-      })
+      if (matchIdFromUrl) {
+        // ✅ Load the specific match user clicked
+        liveMatch = allMatches.find(m => m.id === matchIdFromUrl) || null
+      }
 
-      if (!liveMatch) liveMatch = upcoming
+      // Fallback — find live match if no matchId in URL
+      if (!liveMatch) {
+        liveMatch = allMatches.find(m => m.status === 'live') || null
+      }
+
+      // Fallback — find upcoming
+      if (!liveMatch) {
+        liveMatch = allMatches.find(m => m.status === 'upcoming') || null
+      }
 
       document.getElementById('loading-state').classList.add('hidden')
 
@@ -315,7 +327,8 @@
             <span>🏏</span>
             <p>No active match right now!</p>
             <a href="dashboard.html" class="btn-primary"
-              style="margin-top:16px;display:inline-block;text-decoration:none">
+              style="margin-top:16px;display:inline-block;
+              text-decoration:none">
               ← Back to Dashboard
             </a>
           </div>`
@@ -342,7 +355,6 @@
         }) : 'TBA'
       document.getElementById('pmh-date').textContent = formattedDate
 
-      // Fill column headers
       document.getElementById('col-flag1').textContent = liveMatch.team1Flag || '🏏'
       document.getElementById('col-name1').textContent = liveMatch.team1Name
       document.getElementById('col-flag2').textContent = liveMatch.team2Flag || '🏏'
@@ -797,7 +809,8 @@
       btn.disabled = true
 
       try {
-        const predictionId = currentUser.uid + '_' + Date.now()
+        // ✅ Use uid + matchId as prediction ID to prevent duplicates
+        const predictionId = currentUser.uid + '_' + liveMatch.id
         const regularPlayers = selectedPlayers.filter(p => !p.isImpact)
         const impactPlayer = selectedPlayers.find(p => p.isImpact)
 

@@ -82,6 +82,9 @@
         </div>
       </div>
 
+      <!-- EDIT BUTTON — shown only for upcoming matches -->
+      <div id="edit-team-container"></div>
+
       <!-- CRICKET FIELD -->
       <div class="cricket-field-wrapper">
         <div class="cricket-field">
@@ -155,54 +158,90 @@
 
     async function loadMyTeam(uid) {
       try {
-        const q = query(collection(db, 'predictions'), where('userId', '==', uid))
-        const predSnap = await getDocs(q)
+        // ✅ Get matchId from URL
+        const params = new URLSearchParams(window.location.search)
+        const matchId = params.get('matchId')
 
-        if (predSnap.empty) {
+        let predDoc = null
+
+        if (matchId) {
+          // ✅ Load prediction for SPECIFIC match
+          const q = query(
+            collection(db, 'predictions'),
+            where('userId', '==', uid),
+            where('matchId', '==', matchId)
+          )
+          const predSnap = await getDocs(q)
+          if (!predSnap.empty) {
+            predDoc = predSnap.docs[0]
+          }
+        } else {
+          // Fallback — load latest prediction
+          const q = query(collection(db, 'predictions'), where('userId', '==', uid))
+          const predSnap = await getDocs(q)
+          if (!predSnap.empty) {
+            predDoc = predSnap.docs[predSnap.docs.length - 1]
+          }
+        }
+
+        if (!predDoc) {
           document.getElementById('loading-state').innerHTML = `
             <div style="text-align:center;padding:40px">
               <span style="font-size:3rem">🎯</span>
-              <p style="color:white;margin:12px 0">No prediction found!</p>
-              <a href="dashboard.html" style="display:inline-block;margin-top:12px;
-                padding:10px 24px;background:var(--gradient-btn);border-radius:10px;
-                text-decoration:none;color:white;font-weight:600">
-                ← Back
+              <p style="color:white;margin:12px 0">
+                No prediction found for this match!
+              </p>
+              <a href="dashboard.html"
+                style="display:inline-block;margin-top:12px;
+                padding:10px 24px;background:var(--gradient-btn);
+                border-radius:10px;text-decoration:none;
+                color:white;font-weight:600">
+                ← Back to Dashboard
               </a>
             </div>`
           return
         }
 
-        const predDoc = predSnap.docs[predSnap.docs.length - 1]
         const pred = predDoc.data()
 
-        // ✅ Fetch fresh data for all players
+        // ✅ Fetch fresh player data
         const updatedPlayers = []
         for (const p of (pred.players || [])) {
           try {
             const playerDoc = await getDoc(doc(db, 'players', p.id))
             updatedPlayers.push({
               ...p,
-              points: playerDoc.exists() ? parseInt(playerDoc.data().points) || 0 : parseInt(p.points) || 0,
-              photoUrl: playerDoc.exists() ? playerDoc.data().photoUrl || '' : '',
-              blueLight: playerDoc.exists() ? playerDoc.data().blueLight || 'no' : 'no',
-              status: playerDoc.exists() ? playerDoc.data().status || 'green' : 'green'
+              points: playerDoc.exists()
+                ? parseInt(playerDoc.data().points) || 0
+                : parseInt(p.points) || 0,
+              photoUrl: playerDoc.exists()
+                ? playerDoc.data().photoUrl || '' : '',
+              blueLight: playerDoc.exists()
+                ? playerDoc.data().blueLight || 'no' : 'no',
+              status: playerDoc.exists()
+                ? playerDoc.data().status || 'green' : 'green'
             })
           } catch(e) {
             updatedPlayers.push({ ...p, points: parseInt(p.points) || 0 })
           }
         }
 
-        // ✅ Fetch impact player
+        // ✅ Fetch fresh impact player
         let updatedImpact = null
         if (pred.impactPlayer && pred.impactPlayer.id) {
           try {
             const impDoc = await getDoc(doc(db, 'players', pred.impactPlayer.id))
             updatedImpact = {
               ...pred.impactPlayer,
-              points: impDoc.exists() ? parseInt(impDoc.data().points) || 0 : parseInt(pred.impactPlayer.points) || 0,
-              photoUrl: impDoc.exists() ? impDoc.data().photoUrl || '' : '',
-              blueLight: impDoc.exists() ? impDoc.data().blueLight || 'no' : 'no',
-              status: impDoc.exists() ? impDoc.data().status || 'green' : 'green'
+              points: impDoc.exists()
+                ? parseInt(impDoc.data().points) || 0
+                : parseInt(pred.impactPlayer.points) || 0,
+              photoUrl: impDoc.exists()
+                ? impDoc.data().photoUrl || '' : '',
+              blueLight: impDoc.exists()
+                ? impDoc.data().blueLight || 'no' : 'no',
+              status: impDoc.exists()
+                ? impDoc.data().status || 'green' : 'green'
             }
           } catch(e) {
             updatedImpact = { ...pred.impactPlayer }
@@ -218,7 +257,6 @@
           } catch(e) {}
         }
 
-        // Show content
         document.getElementById('loading-state').classList.add('hidden')
         document.getElementById('team-content').classList.remove('hidden')
 
@@ -227,6 +265,8 @@
 
       } catch(e) {
         console.error(e)
+        document.getElementById('loading-state').innerHTML =
+          `<p style="color:white;text-align:center">❌ Error: ${e.message}</p>`
       }
     }
 
@@ -235,6 +275,23 @@
       document.getElementById('team1-name').textContent = pred.team1 || 'Team 1'
       document.getElementById('team2-flag').textContent = matchData?.team2Flag || pred.team2Flag || '🏏'
       document.getElementById('team2-name').textContent = pred.team2 || 'Team 2'
+
+      // ✅ Show edit button only if match is upcoming
+      const editContainer = document.getElementById('edit-team-container')
+      if (matchData && matchData.status === 'upcoming') {
+        const matchId = pred.matchId || ''
+        editContainer.innerHTML = `
+          <a href="predict.html?matchId=${matchId}"
+            class="btn-edit-team"
+            style="display:block;text-align:center;
+            margin-bottom:12px;text-decoration:none">
+            ✏️ Edit My Team
+          </a>`
+      } else {
+        editContainer.innerHTML = matchData?.status === 'live'
+        ? `<div class="lock-badge">🔒 Team Locked — Match is LIVE</div>`
+        : `<div class="completed-badge">✅ Match Completed — Final Score</div>`
+      }
 
       if (matchData) {
         const statusText = matchData.status === 'live' ? '🔴 LIVE' :
