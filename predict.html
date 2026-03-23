@@ -861,7 +861,9 @@
 
     // ===== DRS AI =====
     window.openDRSAI = function() {
-      document.getElementById('drs-modal').classList.remove('hidden')
+      // ✅ Open DRS AI page with match context
+      const matchId = liveMatch ? `?matchId=${liveMatch.id}` : ''
+      window.location.href = `drs-ai.html${matchId}`
     }
     window.closeDRSAI = function() {
       document.getElementById('drs-modal').classList.add('hidden')
