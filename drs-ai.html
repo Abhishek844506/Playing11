@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playing11 | DRS AI</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="dashboard-page">
+
+  <nav class="navbar">
+    <div class="nav-logo">🏏 Playing<span>11</span></div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">🏠 Home</a></li>
+      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="nav-username">👤 Player</span>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <nav class="bottom-nav">
+    <a href="dashboard.html">🏠<span>Home</span></a>
+    <a href="leaderboard.html">🏆<span>Board</span></a>
+    <a href="#" onclick="handleLogout()">🚪<span>Logout</span></a>
+  </nav>
+
+  <main class="drs-main">
+
+    <!-- HEADER -->
+    <div class="drs-header">
+      <div class="drs-header-left">
+        <div class="drs-logo">🤖</div>
+        <div>
+          <h1 class="drs-title">DRS AI</h1>
+          <p class="drs-subtitle"><b>Cricket Intelligence Assistant</b></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATCH CARD -->
+    <div class="drs-match-card" id="drs-match-card">
+      <div class="lb-loading">⏳ Loading match...</div>
+    </div>
+
+    <!-- AI RESPONSE BOX -->
+    <div class="drs-response-box" id="drs-response-box" style="display:none">
+      <div class="drs-response-header">
+        <span class="drs-response-question" id="drs-response-question"></span>
+        <button class="drs-close-btn" onclick="closeResponse()">✕</button>
+      </div>
+      <div class="drs-response-content" id="drs-response-content"></div>
+    </div>
+
+    <!-- QUICK QUESTIONS -->
+    <div class="drs-quick-section">
+      <div class="drs-quick-label">💡 Tap a question to get AI answer</div>
+      <div class="drs-chips-grid">
+
+        <button class="drs-chip" onclick="askQuestion('captain')">
+          👑 Best Captain?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('vc')">
+          ⭐ Best VC?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('pitch')">
+          🏟️ Pitch Report
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('batsmen')">
+          🏏 Best Batsmen?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('bowlers')">
+          🤾 Best Bowlers?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('allrounders')">
+          🌟 All-Rounders?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('win')">
+          📈 Who Will Win?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('dreamteam')">
+          🎯 Dream Team XI
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('impact')">
+          ⚡ Impact Player?
+        </button>
+
+        <button class="drs-chip" onclick="askQuestion('avoid')">
+          ❌ Who To Avoid?
+        </button>
+
+      </div>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="drs-disclaimer">
+      🤖 AI suggestions are based on player stats in the app.
+      Use your own judgment for final team selection!
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+    import { getFirestore, collection, getDocs, doc, getDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEiYnuVdMgUUkVSAy3yHGdfEC9L-s1JiY",
+      authDomain: "predict11-fc129.firebaseapp.com",
+      projectId: "predict11-fc129",
+      storageBucket: "predict11-fc129.firebasestorage.app",
+      messagingSenderId: "634146309603",
+      appId: "1:634146309603:web:6be9a43a1f54f766134cd6"
+    }
+
+    const GROQ_URL = '/api/groq'
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+
+    let currentMatch = null
+    let matchPlayers = []
+
+    // ===== QUESTION PROMPTS — SHORT ANSWERS =====
+    const questions = {
+      captain: 'Who is the best Captain pick? Give top 2 names with one short reason each. Max 3 lines.',
+      vc: 'Who is the best Vice Captain pick? Give top 2 names with one short reason each. Max 3 lines.',
+      pitch: 'Describe the pitch at this venue in 3 lines. Batting or bowling friendly? Expected score?',
+      batsmen: 'Top 3 batsmen to pick for fantasy. Just names and one word reason each.',
+      bowlers: 'Top 3 bowlers to pick for fantasy. Just names and one word reason each.',
+      allrounders: 'Top 2 all-rounders to pick. Names and one short reason each.',
+      win: 'Which team is likely to win and why? Max 3 lines.',
+      dreamteam: 'Give dream team of 11 players with C and VC. Format: Player Name (Role). Keep it short.',
+      impact: 'Who should be the Impact Player (12th player)? One name with short reason.',
+      avoid: 'Which 2-3 players should be avoided this match and why? Keep it very short.'
+    }
+
+    const questionLabels = {
+      captain: '👑 Best Captain?',
+      vc: '⭐ Best Vice Captain?',
+      pitch: '🏟️ Pitch Report',
+      batsmen: '🏏 Best Batsmen?',
+      bowlers: '🤾 Best Bowlers?',
+      allrounders: '🌟 All-Rounders?',
+      win: '📈 Who Will Win?',
+      dreamteam: '🎯 Dream Team XI',
+      impact: '⚡ Impact Player?',
+      avoid: '❌ Who To Avoid?'
+    }
+
+    // ===== AUTH =====
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = 'login.html'; return }
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        if (userDoc.exists()) {
+          document.getElementById('nav-username').textContent =
+            '👤 ' + (userDoc.data().username || user.email.split('@')[0])
+        }
+      } catch(e) {}
+      loadMatchContext()
+    })
+
+    // ===== LOAD MATCH =====
+    async function loadMatchContext() {
+      try {
+        const params = new URLSearchParams(window.location.search)
+        const matchIdFromUrl = params.get('matchId')
+
+        const snap = await getDocs(collection(db, 'matches'))
+        const allMatches = []
+        snap.forEach(d => allMatches.push({ id: d.id, ...d.data() }))
+
+        if (matchIdFromUrl) {
+          currentMatch = allMatches.find(m => m.id === matchIdFromUrl)
+        }
+        if (!currentMatch) {
+          currentMatch = allMatches.find(m => m.status === 'live')
+        }
+        if (!currentMatch) {
+          currentMatch = allMatches.find(m => m.status === 'upcoming')
+        }
+
+        if (!currentMatch) {
+          document.getElementById('drs-match-card').innerHTML =
+            '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5)">No active match found!</div>'
+          return
+        }
+
+        // Load players
+        const playersSnap = await getDocs(collection(db, 'players'))
+        playersSnap.forEach(d => {
+          const p = d.data()
+          if (p.teamId === currentMatch.team1Id ||
+              p.teamId === currentMatch.team2Id) {
+            matchPlayers.push({ id: d.id, ...p })
+          }
+        })
+
+        renderMatchCard()
+
+      } catch(e) { console.error(e) }
+    }
+
+    // ===== RENDER MATCH CARD =====
+    function renderMatchCard() {
+      const statusColor = currentMatch.status === 'live' ? '#ff5050' :
+                          currentMatch.status === 'upcoming' ? '#f9f047' : '#43e97b'
+      const statusText = currentMatch.status === 'live' ? '🔴 LIVE' :
+                         currentMatch.status === 'upcoming' ? '⏳ Upcoming' : '✅ Completed'
+
+      document.getElementById('drs-match-card').innerHTML = `
+        <div style="display:flex;justify-content:space-between;
+          align-items:center;margin-bottom:14px">
+          <span style="font-size:0.78rem;font-weight:700;
+            color:${statusColor};
+            background:${statusColor}22;
+            border:1px solid ${statusColor}55;
+            padding:4px 14px;border-radius:20px">
+            ${statusText}
+          </span>
+          <span style="font-size:0.72rem;color:rgba(255,255,255,0.5);
+            background:rgba(255,255,255,0.08);
+            padding:4px 10px;border-radius:8px;font-weight:600">
+            ${currentMatch.matchType || 'T20'}
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;
+          justify-content:space-around;gap:12px">
+          <div style="text-align:center">
+            <div style="font-size:2.2rem">${currentMatch.team1Flag || '🏏'}</div>
+            <div style="font-size:1rem;font-weight:800;
+              color:white;margin-top:6px">
+              ${currentMatch.team1Name}
+            </div>
+          </div>
+          <div style="font-size:1.1rem;font-weight:900;
+            background:var(--gradient);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            background-clip:text">VS</div>
+          <div style="text-align:center">
+            <div style="font-size:2.2rem">${currentMatch.team2Flag || '🏏'}</div>
+            <div style="font-size:1rem;font-weight:800;
+              color:white;margin-top:6px">
+              ${currentMatch.team2Name}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:0.75rem;
+          color:rgba(255,255,255,0.55);
+          margin-top:14px;padding-top:12px;
+          border-top:1px solid rgba(255,255,255,0.08)">
+          <span>📅 ${currentMatch.date || 'TBA'}</span>
+          <span>🏟️ ${currentMatch.venue || 'TBA'}</span>
+        </div>`
+    }
+
+    // ===== BUILD CONTEXT =====
+    function buildContext() {
+      const team1Players = matchPlayers
+        .filter(p => p.teamId === currentMatch.team1Id)
+        .map(p => `${p.name}(${p.role},${p.points || 0}pts)`)
+        .join(', ')
+
+      const team2Players = matchPlayers
+        .filter(p => p.teamId === currentMatch.team2Id)
+        .map(p => `${p.name}(${p.role},${p.points || 0}pts)`)
+        .join(', ')
+
+      return `Fantasy cricket match: ${currentMatch.team1Name} vs ${currentMatch.team2Name} at ${currentMatch.venue || 'unknown venue'}, ${currentMatch.matchType || 'T20'} format.
+${currentMatch.team1Name} players: ${team1Players}
+${currentMatch.team2Name} players: ${team2Players}
+Points: runs=1pt, wicket=10pts, 50=+10, 100=+20, Captain=2x, VC=1.5x`
+    }
+
+    // ===== ASK QUESTION =====
+    window.askQuestion = async function(type) {
+      const responseBox = document.getElementById('drs-response-box')
+      const responseContent = document.getElementById('drs-response-content')
+      const responseQuestion = document.getElementById('drs-response-question')
+
+      // Show loading
+      responseQuestion.textContent = questionLabels[type]
+      responseContent.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;
+          padding:16px;color:rgba(255,255,255,0.6)">
+          <span style="font-size:1.5rem;animation:spin 1s linear infinite">⏳</span>
+          <span>AI is thinking...</span>
+        </div>`
+      responseBox.style.display = 'block'
+      responseBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+
+      // Disable clicked chip
+      document.querySelectorAll('.drs-chip').forEach(c => {
+        c.disabled = true
+        c.style.opacity = '0.5'
+      })
+
+      try {
+        const prompt = `${buildContext()}\n\n${questions[type]}`
+        const response = await callGemini(prompt)
+        responseContent.innerHTML = formatResponse(response)
+
+      } catch(e) {
+        responseContent.innerHTML = `
+          <div style="color:#ff5050;padding:16px;font-size:0.85rem">
+            ❌ ${e.message.includes('quota')
+              ? 'API quota exceeded. Please try again later!'
+              : e.message}
+          </div>`
+      }
+
+      // Re-enable chips
+      document.querySelectorAll('.drs-chip').forEach(c => {
+        c.disabled = false
+        c.style.opacity = '1'
+      })
+    }
+
+    // ===== CALL GEMINI =====
+    async function callGemini(prompt) {
+      const response = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: prompt,
+          context: buildContext()
+        })
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'AI service error!')
+      }
+
+      const data = await response.json()
+      return data.answer || 'No response!'
+    }
+
+
+
+    // ===== FORMAT RESPONSE =====
+    function formatResponse(text) {
+      return `<div style="font-size:0.88rem;
+        color:rgba(255,255,255,0.92);
+        line-height:1.7;padding:4px 0">
+        ${text
+          .replace(/\*\*(.*?)\*\*/g,
+            '<strong style="color:#f9f047">$1</strong>')
+          .replace(/\*(.*?)\*/g,
+            '<em style="color:#43e97b">$1</em>')
+          .replace(/\n\n/g, '<br/><br/>')
+          .replace(/\n/g, '<br/>')
+        }
+      </div>`
+    }
+
+    // ===== CLOSE RESPONSE =====
+    window.closeResponse = function() {
+      document.getElementById('drs-response-box').style.display = 'none'
+    }
+
+    // ===== LOGOUT =====
+    window.handleLogout = async function() {
+      await signOut(auth)
+      window.location.href = 'login.html'
+    }
+  </script>
+
+</body>
+</html>
