@@ -332,24 +332,41 @@ Points: runs=1pt, wicket=10pts, 50=+10, 100=+20, Captain=2x, VC=1.5x`
       })
     }
 
-    // ===== CALL GEMINI =====
+    // ===== CALL GROQ (FIXED) =====
     async function callGemini(prompt) {
-      const response = await fetch(GROQ_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: prompt,
-          context: buildContext()
+      try {
+        const response = await fetch(GROQ_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: prompt,
+            context: buildContext()
+          })
         })
-      })
 
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'AI service error!')
+        // 👉 Get raw text first (IMPORTANT)
+        const text = await response.text()
+        console.log("RAW API RESPONSE:", text)
+
+        let data = {}
+        try {
+          data = text ? JSON.parse(text) : {}
+        } catch (err) {
+          console.error("JSON Parse Error:", text)
+          throw new Error("Invalid response from AI server")
+        }
+
+        // 👉 Handle API errors safely
+        if (!response.ok) {
+          throw new Error(data?.error || 'AI service error!')
+        }
+
+        return data?.answer || "⚠️ No response from AI"
+
+      } catch (error) {
+        console.error("AI ERROR:", error)
+        throw error
       }
-
-      const data = await response.json()
-      return data.answer || 'No response!'
     }
 
 
